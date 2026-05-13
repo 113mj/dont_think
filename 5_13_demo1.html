@@ -153,24 +153,26 @@ class GameScene extends Phaser.Scene {
 
     // 현재 모양 섹션
     this.add.text(PX, 50, '[ 현재 모양 ]', { fontSize: '11px', fontFamily: 'system-ui', color: '#555' });
-    const PCELL = 40;
+    const PCELL = 48;
+    // 미리보기 배경 (3x3 영역 윤곽)
+    this.add.rectangle(PX - 2, 62, PCELL * 3 + 4, PCELL * 3 + 4, 0x111128).setOrigin(0).setStrokeStyle(1, 0x2a2a4a);
     this.shapePreview = [];
     for (let r = 0; r < 3; r++)
       for (let c = 0; c < 3; c++) {
         const x = PX + c * PCELL + PCELL / 2, y = 64 + r * PCELL + PCELL / 2;
-        const bg = this.add.rectangle(x, y, PCELL - 3, PCELL - 3, 0x16213e).setStrokeStyle(1, 0x333355).setVisible(false);
-        const txt = this.add.text(x, y, '', { fontSize: '20px', fontFamily: 'system-ui', color: '#fff' }).setOrigin(0.5).setVisible(false);
+        const bg = this.add.rectangle(x, y, PCELL - 3, PCELL - 3, 0x14142a).setStrokeStyle(1, 0x1e1e3a);
+        const txt = this.add.text(x, y, '', { fontSize: '22px', fontFamily: 'system-ui', color: '#fff' }).setOrigin(0.5);
         this.shapePreview.push({ bg, txt, r, c });
       }
-    this.shapeMsg = this.add.text(PX, 192, '', { fontSize: '11px', fontFamily: 'system-ui', color: '#888' });
+    this.shapeMsg = this.add.text(PX, 214, '', { fontSize: '11px', fontFamily: 'system-ui', color: '#888' });
 
     // 주사위 풀 섹션
-    this.add.text(PX, 210, '[ 주사위 풀 ]', { fontSize: '11px', fontFamily: 'system-ui', color: '#555' });
+    this.add.text(PX, 230, '[ 주사위 풀 ]', { fontSize: '11px', fontFamily: 'system-ui', color: '#555' });
     const DCELL = 52;
     this.poolObjs = [];
     for (let i = 0; i < 10; i++) {
       const col = i % 5, row = ~~(i / 5);
-      const x = PX + col * DCELL + DCELL / 2, y = 225 + row * DCELL + DCELL / 2;
+      const x = PX + col * DCELL + DCELL / 2, y = 245 + row * DCELL + DCELL / 2;
       const bg = this.add.rectangle(x, y, DCELL - 4, DCELL - 4, 0x16213e).setStrokeStyle(2, 0x383858).setInteractive();
       const txt = this.add.text(x, y, '', { fontSize: '22px', fontFamily: 'system-ui', color: '#fff' }).setOrigin(0.5);
       const lbl = this.add.text(x + DCELL / 2 - 3, y - DCELL / 2 + 3, i < 9 ? `${i + 1}` : '0',
@@ -180,34 +182,34 @@ class GameScene extends Phaser.Scene {
     }
 
     // Next 큐 섹션
-    this.add.text(PX, 342, '[ NEXT ]', { fontSize: '11px', fontFamily: 'system-ui', color: '#555' });
-    const NCELL = 22, NW = 88;
+    this.add.text(PX, 362, '[ NEXT ]', { fontSize: '11px', fontFamily: 'system-ui', color: '#555' });
+    const NCELL = 28, NW = 96;
     this.nextObjs = [];
     for (let n = 0; n < 3; n++) {
       const nx = PX + n * (NW + 6);
-      this.add.rectangle(nx, 357, NW, NW, 0x16213e).setOrigin(0).setStrokeStyle(1, 0x333355);
+      this.add.rectangle(nx, 377, NW, NW, 0x111128).setOrigin(0).setStrokeStyle(1, 0x2a2a4a);
       const cells = [];
       for (let r = 0; r < 3; r++)
         for (let c = 0; c < 3; c++) {
-          const x = nx + c * NCELL + NCELL / 2 + 4, y = 357 + r * NCELL + NCELL / 2 + 4;
-          const bg2 = this.add.rectangle(x, y, NCELL - 2, NCELL - 2, 0x2a2a5e).setVisible(false);
-          const txt2 = this.add.text(x, y, '', { fontSize: '10px', fontFamily: 'system-ui', color: '#aaa' }).setOrigin(0.5).setVisible(false);
+          const x = nx + c * NCELL + NCELL / 2 + 4, y = 379 + r * NCELL + NCELL / 2 + 4;
+          const bg2 = this.add.rectangle(x, y, NCELL - 2, NCELL - 2, 0x14142a).setStrokeStyle(1, 0x1e1e3a);
+          const txt2 = this.add.text(x, y, '', { fontSize: '12px', fontFamily: 'system-ui', color: '#aaa' }).setOrigin(0.5);
           cells.push({ bg2, txt2, r, c });
         }
       this.nextObjs.push(cells);
     }
 
     // 조작 안내
-    this.add.text(PX, 457, '[ 조작법 ]', { fontSize: '11px', fontFamily: 'system-ui', color: '#555' });
+    this.add.text(PX, 486, '[ 조작법 ]', { fontSize: '11px', fontFamily: 'system-ui', color: '#555' });
     [
       '채우기: 1~0 키로 주사위 선택',
-      'R: 모양 회전 (채운 주사위 반환)',
+      'R: 모양 회전 (채우기/배치 모두 가능)',
       'Backspace: 마지막 주사위 취소',
       '배치: ← → 이동 후 Space 드롭',
-    ].forEach((t, i) => this.add.text(PX, 472 + i * 15, t, { fontSize: '11px', fontFamily: 'system-ui', color: '#444' }));
+    ].forEach((t, i) => this.add.text(PX, 501 + i * 15, t, { fontSize: '11px', fontFamily: 'system-ui', color: '#444' }));
 
     // 방해 주사위 카운터
-    this.blockerBar = this.add.text(PX, 537, '', { fontSize: '11px', fontFamily: 'system-ui', color: '#ff5555' });
+    this.blockerBar = this.add.text(PX, 567, '', { fontSize: '11px', fontFamily: 'system-ui', color: '#ff5555' });
 
     // 체인 메시지
     this.chainMsg = this.add.text(this.scale.width / 2, this.scale.height / 2, '', {
@@ -231,6 +233,7 @@ class GameScene extends Phaser.Scene {
         if (e.key === 'Backspace') { this.undoSlot(); return; }
       }
       if (gs.phase === 'placing') {
+        if (e.key === 'r' || e.key === 'R') { this.rotateShape(); return; }
         if (e.key === 'ArrowLeft') {
           const minC = Math.min(...gs.shape.cells.map(([, c]) => c));
           if (gs.shapeX + minC > 0) { gs.shapeX--; this.render(); }
@@ -322,20 +325,23 @@ class GameScene extends Phaser.Scene {
 
   rotateShape() {
     const gs = this.gs;
-    if (gs.phase !== 'filling' || !gs.shape) return;
-    // 채워진 주사위 풀로 반환
-    for (let i = gs.shape.fillIdx - 1; i >= 0; i--) {
-      const v = gs.shape.dice[i];
-      const empty = gs.pool.findIndex(p => p === null);
-      if (empty >= 0) gs.pool[empty] = v;
-    }
+    if ((gs.phase !== 'filling' && gs.phase !== 'placing') || !gs.shape) return;
+    // 채워진 주사위는 슬롯에 그대로 유지하고 모양만 회전
     gs.shape.cells = rotateShape(gs.shape.cells);
-    gs.shape.dice = Array(gs.shape.cells.length).fill(null);
-    gs.shape.fillIdx = 0;
     // shapeX 범위 보정
     const maxC = Math.max(...gs.shape.cells.map(([, c]) => c));
     if (gs.shapeX + maxC >= COLS) gs.shapeX = COLS - maxC - 1;
     this.render();
+
+    // 회전 피드백: 미리보기 셀 전체를 잠깐 하얗게 깜빡임
+    const activeBgs = this.shapePreview
+      .filter(({ r, c }) => gs.shape.cells.some(([sr, sc]) => sr === r && sc === c))
+      .map(({ bg }) => bg);
+    this.tweens.add({
+      targets: activeBgs,
+      alpha: 0.3, duration: 80, yoyo: true, repeat: 1,
+      onComplete: () => activeBgs.forEach(b => b.setAlpha(1))
+    });
   }
 
   reroll(cb) {
@@ -565,23 +571,31 @@ class GameScene extends Phaser.Scene {
     // 현재 모양 미리보기
     const shape = gs.shape;
     this.shapePreview.forEach(({ bg, txt, r, c }) => {
-      if (!shape) { bg.setVisible(false); txt.setVisible(false); return; }
+      if (!shape) {
+        // 모양 없음: 희미한 빈 칸
+        bg.setFillStyle(0x14142a).setStrokeStyle(1, 0x1e1e3a);
+        txt.setText('');
+        return;
+      }
       const idx = shape.cells.findIndex(([sr, sc]) => sr === r && sc === c);
       if (idx >= 0) {
+        // 모양에 속하는 칸 — 밝은 파란색으로 명확하게 표시
         const v = shape.dice[idx];
         const isCurrent = idx === shape.fillIdx && gs.phase === 'filling';
-        bg.setVisible(true)
-          .setFillStyle(isCurrent ? 0x3a2050 : 0x2a2a5e)
-          .setStrokeStyle(2, isCurrent ? 0xffaa00 : (v !== null ? 0x5555cc : 0x444466));
-        if (v !== null) {
-          txt.setVisible(true).setText(EMOJI[v]).setColor('#ffffff');
-        } else if (isCurrent) {
-          txt.setVisible(true).setText('?').setColor('#ffaa00');
+        if (isCurrent) {
+          bg.setFillStyle(0x5a2080).setStrokeStyle(3, 0xffcc00);
+          txt.setText('?').setColor('#ffcc00');
+        } else if (v !== null) {
+          bg.setFillStyle(0x1a3a8a).setStrokeStyle(3, 0x88aaff);
+          txt.setText(EMOJI[v]).setColor('#ffffff');
         } else {
-          txt.setVisible(true).setText('').setColor('#666');
+          bg.setFillStyle(0x223070).setStrokeStyle(2, 0x6688dd);
+          txt.setText('');
         }
       } else {
-        bg.setVisible(false); txt.setVisible(false);
+        // 모양에 속하지 않는 칸: 거의 안 보이게
+        bg.setFillStyle(0x08081a).setStrokeStyle(1, 0x111122);
+        txt.setText('');
       }
     });
 
@@ -604,8 +618,13 @@ class GameScene extends Phaser.Scene {
       const sc = gs.nextQ[n];
       cells.forEach(({ bg2, txt2, r, c }) => {
         const has = sc && sc.some(([sr, sc2]) => sr === r && sc2 === c);
-        if (has) { bg2.setVisible(true); txt2.setVisible(true); }
-        else { bg2.setVisible(false); txt2.setVisible(false); }
+        if (has) {
+          bg2.setFillStyle(0x1a3a8a).setStrokeStyle(2, 0x88aaff);
+          txt2.setText('');
+        } else {
+          bg2.setFillStyle(0x08081a).setStrokeStyle(1, 0x111122);
+          txt2.setText('');
+        }
       });
     });
   }
