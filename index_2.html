@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주사위 스택</title>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1a1a2e; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+</style>
+</head>
+<body>
+<script>
+const CELL = 42, COLS = 4, ROWS = 16;
+const GX = 15, GY = 65;
+const PX = 205;
+const EMOJI = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
+
+// BootScene: 에셋 없으므로 바로 TitleScene으로
+class BootScene extends Phaser.Scene {
+  constructor() { super('BootScene'); }
+  create() { this.scene.start('TitleScene'); }
+}
+
+// TitleScene: 타이틀 화면
+class TitleScene extends Phaser.Scene {
+  constructor() { super('TitleScene'); }
+  create() {
+    const W = this.scale.width, H = this.scale.height;
+    this.add.rectangle(0, 0, W, H, 0x1a1a2e).setOrigin(0);
+
+    const title = this.add.text(W / 2, H / 2 - 130, '주사위 스택', {
+      fontSize: '54px', fontFamily: 'system-ui', color: '#e94560', fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    this.add.text(W / 2, H / 2 - 55, '⚀ ⚁ ⚂ ⚃ ⚄ ⚅', {
+      fontSize: '38px', fontFamily: 'system-ui'
+    }).setOrigin(0.5);
+
+    this.add.text(W / 2, H / 2 + 10, '주사위를 쌓고 같은 숫자 4칸을 맞춰 제거!', {
+      fontSize: '16px', fontFamily: 'system-ui', color: '#888888'
+    }).setOrigin(0.5);
+
+    const btn = this.add.rectangle(W / 2, H / 2 + 100, 220, 54, 0xe94560).setInteractive();
+    const btnTxt = this.add.text(W / 2, H / 2 + 100, '게임 시작', {
+      fontSize: '24px', fontFamily: 'system-ui', color: '#ffffff'
+    }).setOrigin(0.5);
+
+    btn.on('pointerover', () => btn.setFillStyle(0xc73652));
+    btn.on('pointerout', () => btn.setFillStyle(0xe94560));
+    btn.on('pointerdown', () => {
+      this.cameras.main.fade(300, 0, 0, 0);
+      this.time.delayedCall(300, () => this.scene.start('GameScene'));
+    });
+
+    // 타이틀 펄스 애니메이션
+    this.tweens.add({ targets: title, scaleX: 1.04, scaleY: 1.04, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+    this.tweens.add({ targets: btnTxt, scaleX: 1.05, scaleY: 1.05, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+  }
+}
+
+// GameScene: 메인 게임 로직
+class GameScene extends Phaser.Scene {
+  constructor() { super('GameScene'); }
+
+  create() {
+    const W = this.scale.width, H = this.scale.height;
+    this.add.rectangle(0, 0, W, H, 0x1a1a2e).setOrigin(0);
+
+    // 게임 상태
+    this.gs = {
+      grid: Array.from({ length: ROWS }, () => Array(COLS).fill(null)),
+      score: 0, round: 1,
+      phase: 'roll',   // 'roll' | 'pairing' | 'dropping' | 'gameover'
+      pool: [], sel: [], pairs: [],
+      active: null, dir: 'v',
+    };
+
+    this.buildStaticUI();
+    this.buildDynamicObjects();
+    this.render();
+  }
+
+  buildStaticUI() {
+    // 그리드 테두리 배경
+    this.add.rectangle(GX - 3, GY - 3, COLS * CELL + 6, ROWS * CELL + 6, 0x0f3460)
+      .setOrigin(0).setStrokeStyle(2, 0xe94560);
+    // 셀 배경 (정적)
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        this.add.rectangle(GX + c * CELL + 1, GY + r * CELL + 1, CELL - 2, CELL - 2, 0x16213e).setOrigin(0);
+    // 세로 구분선
+    this.add.rectangle(PX - 10, 0, 2, this.scale.height, 0x2a2a4e).setOrigin(0);
+
+    // HUD 텍스트
+    this.hudScore  = this.add.text(PX, 8,  '점수: 0',   { fontSize: '16px', fontFamily: 'system-ui', color: '#ffffff' });
+    this.hudRound  = this.add.text(PX + 160, 8, '라운드: 1', { fontSize: '16px', fontFamily: 'system-ui', color: '#ffffff' });
+    this.hudPairs  = this.add.text(PX + 320, 8, '',       { fontSize: '16px', fontFamily: 'system-ui', color: '#aaaaaa' });
+    this.hudPhase  = this.add.text(PX, 30, '',            { fontSize: '12px', fontFamily: 'system-ui', color: '#666666' });
+
+    // 타이틀 (그리드 위)
+    this.add.text(GX, 10, '주사위 스택', { fontSize: '18px', fontFamily: 'system-ui', color: '#e94560', fontStyle: 'bold' });
+
+    // 섹션 레이블
+    this.add.text(PX, 72, '주사위 풀', { fontSize: '11px', fontFamily: 'system-ui', color: '#555555' });
+    this.add.text(PX, 232, '구성된 쌍', { fontSize: '11px', fontFamily: 'system-ui', color: '#555555' });
+  }
+
+  buildDynamicObjects() {
+    // 열 드롭 버튼
+    this.colBtns = [];
+    for (let c = 0; c < COLS; c++) {
+      const x = GX + c * CELL + CELL / 2;
+      const y = GY - 20;
+      const bg = this.add.rectangle(x, y, CELL - 4, 28, 0xe94560).setInteractive();
+      const txt = this.add.text(x, y, '▼', { fontSize: '13px', fontFamily: 'system-ui', color: '#fff' }).setOrigin(0.5);
+      bg.on('pointerdown', () => { if (!bg.getData('off')) this.drop(c); });
+      bg.on('pointerover', () => { if (!bg.getData('off')) bg.setFillStyle(0xc73652); });
+      bg.on('pointerout', () => { if (!bg.getData('off')) bg.setFillStyle(0xe94560); });
+      this.colBtns.push({ bg, txt });
+    }
+
+    // 그리드 주사위 오브젝트 (각 셀 고정 위치)
+    this.gridObjs = [];
+    for (let r = 0; r < ROWS; r++) {
+      this.gridObjs[r] = [];
+      for (let c = 0; c < COLS; c++) {
+        const cx = GX + c * CELL + CELL / 2;
+        const cy = GY + r * CELL + CELL / 2;
+        const bg = this.add.rectangle(cx, cy, CELL - 4, CELL - 4, 0x16213e).setVisible(false);
+        const txt = this.add.text(cx, cy, '', { fontSize: '20px', fontFamily: 'system-ui', color: '#fff' }).setOrigin(0.5).setVisible(false);
+        this.gridObjs[r][c] = { bg, txt, cx, cy };
+      }
+    }
+
+    // 풀 주사위 (10개: 5열 x 2행)
+    this.poolObjs = [];
+    for (let i = 0; i < 10; i++) {
+      const col = i % 5, row = Math.floor(i / 5);
+      const x = PX + col * 54 + 27;
+      const y = 88 + row * 54 + 27;
+      const bg = this.add.rectangle(x, y, 48, 48, 0x16213e).setStrokeStyle(2, 0x383858).setInteractive();
+      const txt = this.add.text(x, y, '', { fontSize: '24px', fontFamily: 'system-ui', color: '#fff' }).setOrigin(0.5);
+      bg.on('pointerdown', () => this.selectDie(i));
+      this.poolObjs.push({ bg, txt });
+    }
+
+    // 쌍 목록 슬롯 (5개)
+    this.pairObjs = [];
+    for (let i = 0; i < 5; i++) {
+      const y = 248 + i * 52;
+      const bg = this.add.rectangle(PX, y, 275, 46, 0x16213e).setOrigin(0).setStrokeStyle(2, 0x333333).setInteractive().setVisible(false);
+      const dTxt = this.add.text(PX + 8, y + 8, '', { fontSize: '22px', fontFamily: 'system-ui', color: '#fff' }).setVisible(false);
+      const dirTxt = this.add.text(PX + 260, y + 14, '', { fontSize: '12px', fontFamily: 'system-ui', color: '#888' }).setOrigin(1, 0).setVisible(false);
+      bg.on('pointerdown', () => this.setPair(i));
+      this.pairObjs.push({ bg, dTxt, dirTxt, y });
+    }
+
+    // 방향 토글 버튼
+    const dirBg = this.add.rectangle(PX, 516, 128, 38, 0x16213e).setOrigin(0).setStrokeStyle(2, 0xe94560).setInteractive();
+    this.dirTxt = this.add.text(PX + 64, 535, '세로 ↕', { fontSize: '14px', fontFamily: 'system-ui', color: '#e94560' }).setOrigin(0.5);
+    dirBg.on('pointerdown', () => this.toggleDir());
+    dirBg.on('pointerover', () => dirBg.setFillStyle(0x2d1826));
+    dirBg.on('pointerout', () => dirBg.setFillStyle(0x16213e));
+
+    // 굴리기 버튼
+    this.rollBg = this.add.rectangle(PX + 140, 516, 128, 38, 0xe94560).setOrigin(0).setInteractive();
+    this.rollTxt = this.add.text(PX + 204, 535, '🎲 굴리기', { fontSize: '14px', fontFamily: 'system-ui', color: '#fff' }).setOrigin(0.5);
+    this.rollBg.on('pointerdown', () => { if (!this.rollBg.getData('off')) this.startRoll(); });
+    this.rollBg.on('pointerover', () => { if (!this.rollBg.getData('off')) this.rollBg.setFillStyle(0xc73652); });
+    this.rollBg.on('pointerout', () => { if (!this.rollBg.getData('off')) this.rollBg.setFillStyle(0xe94560); });
+
+    // 쌍 확정 버튼
+    this.pairBg = this.add.rectangle(PX, 563, 268, 38, 0xe94560).setOrigin(0).setInteractive();
+    this.pairTxt = this.add.text(PX + 134, 582, '쌍 확정', { fontSize: '14px', fontFamily: 'system-ui', color: '#fff' }).setOrigin(0.5);
+    this.pairBg.on('pointerdown', () => { if (!this.pairBg.getData('off')) this.confirmPair(); });
+    this.pairBg.on('pointerover', () => { if (!this.pairBg.getData('off')) this.pairBg.setFillStyle(0xc73652); });
+    this.pairBg.on('pointerout', () => { if (!this.pairBg.getData('off')) this.pairBg.setFillStyle(0xe94560); });
+
+    // 체인 메시지
+    this.chainMsg = this.add.text(this.scale.width / 2, this.scale.height / 2, '', {
+      fontSize: '42px', fontFamily: 'system-ui', color: '#fff',
+      backgroundColor: '#e94560', padding: { x: 20, y: 10 }
+    }).setOrigin(0.5).setAlpha(0).setDepth(50);
+  }
+
+  d6() { return Math.ceil(Math.random() * 6); }
+
+  // 굴리기: 숫자 빠르게 변하는 롤링 효과
+  startRoll() {
+    if (this.gs.phase !== 'roll') return;
+    const gs = this.gs;
+    gs.pool = Array.from({ length: 10 }, () => this.d6());
+    gs.sel = []; gs.pairs = []; gs.active = null; gs.dir = 'v';
+    gs.phase = 'pairing';
+
+    let tick = 0;
+    this.time.addEvent({
+      delay: 55, repeat: 19,
+      callback: () => {
+        tick++;
+        this.poolObjs.forEach(obj => obj.txt.setText(EMOJI[this.d6()]));
+        if (tick >= 20) this.render();
+      }
+    });
+  }
+
+  selectDie(i) {
+    const gs = this.gs;
+    if (gs.phase !== 'pairing' || gs.pool[i] === null) return;
+    if (gs.sel.includes(i)) { gs.sel = gs.sel.filter(x => x !== i); }
+    else if (gs.sel.length < 2) { gs.sel = [...gs.sel, i]; }
+    this.render();
+  }
+
+  confirmPair() {
+    const gs = this.gs;
+    if (gs.sel.length !== 2) return;
+    const [a, b] = gs.sel;
+    gs.pairs.push({ a: gs.pool[a], b: gs.pool[b], dir: gs.dir, placed: false });
+    gs.pool[a] = gs.pool[b] = null;
+    gs.sel = [];
+    if (gs.pairs.length === 5) { gs.phase = 'dropping'; gs.active = 0; gs.dir = gs.pairs[0].dir; }
+    this.render();
+  }
+
+  toggleDir() {
+    const gs = this.gs;
+    gs.dir = gs.dir === 'v' ? 'h' : 'v';
+    if (gs.phase === 'dropping' && gs.active !== null) gs.pairs[gs.active].dir = gs.dir;
+    this.render();
+  }
+
+  setPair(i) {
+    const gs = this.gs;
+    if (gs.phase !== 'dropping' || !gs.pairs[i] || gs.pairs[i].placed) return;
+    gs.active = i; gs.dir = gs.pairs[i].dir;
+    this.render();
+  }
+
+  topRow(col) {
+    for (let r = ROWS - 1; r >= 0; r--)
+      if (this.gs.grid[r][col] === null) return r;
+    return -1;
+  }
+
+  canDrop(col) {
+    const gs = this.gs;
+    if (gs.active === null) return false;
+    const p = gs.pairs[gs.active];
+    if (!p || p.placed) return false;
+    if (p.dir === 'v') return this.topRow(col) >= 1;
+    return col < COLS - 1 && this.topRow(col) >= 0 && this.topRow(col + 1) >= 0;
+  }
+
+  drop(col) {
+    const gs = this.gs;
+    if (gs.phase !== 'dropping' || !this.canDrop(col)) return;
+    const p = gs.pairs[gs.active];
+    let newCells = [];
+
+    if (p.dir === 'v') {
+      const r = this.topRow(col);
+      gs.grid[r][col] = p.a; gs.grid[r - 1][col] = p.b;
+      newCells = [{ r, c: col }, { r: r - 1, c: col }];
+    } else {
+      const r = Math.min(this.topRow(col), this.topRow(col + 1));
+      gs.grid[r][col] = p.a; gs.grid[r][col + 1] = p.b;
+      newCells = [{ r, c: col }, { r, c: col + 1 }];
+    }
+    p.placed = true;
+    this.render();
+
+    // Tween: 위에서 아래로 떨어지는 효과
+    newCells.forEach(({ r, c }) => {
+      const obj = this.gridObjs[r][c];
+      obj.bg.setY(GY + CELL / 2); obj.txt.setY(GY + CELL / 2);
+      this.tweens.add({ targets: [obj.bg, obj.txt], y: obj.cy, duration: 300, ease: 'Bounce.Out' });
+    });
+
+    if (this.gameOverCheck()) { this.time.delayedCall(400, () => this.endGame()); return; }
+
+    const nxt = gs.pairs.findIndex(x => !x.placed);
+    if (nxt >= 0) { gs.active = nxt; gs.dir = gs.pairs[nxt].dir; this.time.delayedCall(330, () => this.render()); }
+    else { gs.active = null; this.time.delayedCall(330, () => this.resolve()); }
+  }
+
+  resolve() {
+    let chain = 0;
+    const step = () => {
+      const del = this.findMatches();
+      if (del.size) {
+        chain++;
+        this.gs.score += 100 * chain;
+        // 연쇄 시 Camera shake
+        if (chain >= 2) this.cameras.main.shake(200, 0.008);
+        this.showChain(chain);
+        this.hudScore.setText(`점수: ${this.gs.score}`);
+
+        // 4칸 제거: 스케일 업 후 페이드아웃
+        del.forEach(k => {
+          const r = ~~(k / COLS), c = k % COLS;
+          const obj = this.gridObjs[r][c];
+          this.tweens.add({
+            targets: [obj.bg, obj.txt], scaleX: 1.4, scaleY: 1.4, alpha: 0,
+            duration: 280, ease: 'Power2',
+            onComplete: () => {
+              obj.bg.setScale(1).setAlpha(1).setVisible(false);
+              obj.txt.setScale(1).setAlpha(1).setVisible(false);
+            }
+          });
+          this.gs.grid[r][c] = null;
+        });
+
+        this.time.delayedCall(460, () => { this.gravity(); this.render(); this.time.delayedCall(150, step); });
+      } else {
+        this.addBlockers();
+        if (this.gameOverCheck()) { this.endGame(); return; }
+        this.gs.round++; this.gs.phase = 'roll';
+        this.render();
+      }
+    };
+    step();
+  }
+
+  findMatches() {
+    const del = new Set(), g = this.gs.grid;
+    // 가로 (4열 전체)
+    for (let r = 0; r < ROWS; r++) {
+      const v = g[r][0];
+      if (v !== null && [1, 2, 3].every(c => g[r][c] === v))
+        for (let c = 0; c < COLS; c++) del.add(r * COLS + c);
+    }
+    // 세로 4연속
+    for (let c = 0; c < COLS; c++)
+      for (let r = 0; r <= ROWS - 4; r++) {
+        const v = g[r][c];
+        if (v !== null && [1, 2, 3].every(i => g[r + i][c] === v))
+          for (let i = 0; i < 4; i++) del.add((r + i) * COLS + c);
+      }
+    // 우하향 대각선 (col 0에서만)
+    for (let r = 0; r <= ROWS - 4; r++) {
+      const v = g[r][0];
+      if (v !== null && [1, 2, 3].every(i => g[r + i][i] === v))
+        for (let i = 0; i < 4; i++) del.add((r + i) * COLS + i);
+    }
+    // 우상향 대각선 (col 3에서만)
+    for (let r = 0; r <= ROWS - 4; r++) {
+      const v = g[r][3];
+      if (v !== null && [1, 2, 3].every(i => g[r + i][3 - i] === v))
+        for (let i = 0; i < 4; i++) del.add((r + i) * COLS + (3 - i));
+    }
+    return del;
+  }
+
+  gravity() {
+    for (let c = 0; c < COLS; c++) {
+      const vals = [];
+      for (let r = 0; r < ROWS; r++) if (this.gs.grid[r][c] !== null) vals.push(this.gs.grid[r][c]);
+      for (let r = 0; r < ROWS; r++)
+        this.gs.grid[r][c] = r < ROWS - vals.length ? null : vals[r - (ROWS - vals.length)];
+    }
+  }
+
+  addBlockers() {
+    const empty = [];
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (this.gs.grid[r][c] === null) empty.push([r, c]);
+    for (let i = empty.length - 1; i > 0; i--) {
+      const j = ~~(Math.random() * (i + 1));
+      [empty[i], empty[j]] = [empty[j], empty[i]];
+    }
+    for (let i = 0; i < Math.min(3, empty.length); i++)
+      this.gs.grid[empty[i][0]][empty[i][1]] = 'X';
+    this.gravity();
+    this.render();
+
+    // 방해 주사위 등장: 팝업 애니메이션
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (this.gs.grid[r][c] === 'X') {
+          const obj = this.gridObjs[r][c];
+          obj.bg.setScale(0); obj.txt.setScale(0);
+          this.tweens.add({ targets: [obj.bg, obj.txt], scaleX: 1, scaleY: 1, duration: 350, ease: 'Back.Out' });
+        }
+  }
+
+  gameOverCheck() { return this.gs.grid[0].some(v => v !== null); }
+
+  endGame() {
+    this.gs.phase = 'gameover';
+    // 게임 오버: 화면 페이드아웃 후 씬 전환
+    this.cameras.main.fade(500, 0, 0, 0);
+    this.time.delayedCall(500, () => this.scene.start('GameOverScene', { score: this.gs.score, round: this.gs.round }));
+  }
+
+  showChain(n) {
+    if (n < 2) return;
+    this.chainMsg.setText(`CHAIN ×${n}!  +${100 * n}pts`);
+    this.chainMsg.setY(this.scale.height / 2).setAlpha(1).setScale(1);
+    this.tweens.killTweensOf(this.chainMsg);
+    this.tweens.add({ targets: this.chainMsg, alpha: 0, y: this.scale.height / 2 - 70, scaleX: 1.3, scaleY: 1.3, duration: 900, ease: 'Power2' });
+  }
+
+  // 단일 렌더 함수
+  render() {
+    const gs = this.gs;
+
+    // HUD 업데이트
+    this.hudScore.setText(`점수: ${gs.score}`);
+    this.hudRound.setText(`라운드: ${gs.round}`);
+    const pLeft = gs.phase === 'pairing' ? `남은 쌍: ${5 - gs.pairs.length}`
+      : gs.phase === 'dropping' ? `남은 쌍: ${gs.pairs.filter(p => !p.placed).length}` : '';
+    this.hudPairs.setText(pLeft);
+    this.hudPhase.setText({
+      roll: '주사위를 굴려 라운드를 시작하세요',
+      pairing: `주사위 2개 선택 후 쌍 확정 (${gs.pairs.length}/5)`,
+      dropping: '쌍 선택 → 방향 설정 → ▼ 버튼으로 배치',
+    }[gs.phase] || '');
+
+    // 열 버튼 상태
+    this.colBtns.forEach(({ bg }, c) => {
+      const off = gs.phase !== 'dropping' || !this.canDrop(c);
+      bg.setData('off', off);
+      bg.setFillStyle(off ? 0x2a2a3e : 0xe94560);
+    });
+
+    // 그리드 렌더링
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++) {
+        const v = gs.grid[r][c], obj = this.gridObjs[r][c];
+        if (v !== null) {
+          obj.bg.setVisible(true).setFillStyle(v === 'X' ? 0x3d0000 : 0x2a2a5e);
+          obj.txt.setVisible(true).setText(v === 'X' ? '✕' : EMOJI[v]).setColor(v === 'X' ? '#ff5555' : '#ffffff');
+        } else {
+          obj.bg.setVisible(false); obj.txt.setVisible(false);
+        }
+      }
+
+    // 굴리기 버튼
+    const rollOff = gs.phase !== 'roll';
+    this.rollBg.setData('off', rollOff); this.rollBg.setFillStyle(rollOff ? 0x2a2a3e : 0xe94560);
+    this.rollTxt.setColor(rollOff ? '#555555' : '#ffffff');
+
+    // 쌍 확정 버튼
+    const pairOff = gs.phase !== 'pairing' || gs.sel.length !== 2;
+    this.pairBg.setData('off', pairOff); this.pairBg.setFillStyle(pairOff ? 0x2a2a3e : 0xe94560);
+    this.pairTxt.setColor(pairOff ? '#555555' : '#ffffff');
+
+    // 방향 버튼 텍스트
+    this.dirTxt.setText(gs.dir === 'v' ? '세로 ↕' : '가로 ↔');
+
+    // 풀 주사위
+    this.poolObjs.forEach((obj, i) => {
+      const v = gs.pool[i], used = v === null || v === undefined, sel = gs.sel.includes(i);
+      obj.bg.setFillStyle(sel ? 0x2d1826 : 0x16213e);
+      obj.bg.setStrokeStyle(2, sel ? 0xe94560 : used ? 0x222222 : 0x383858);
+      obj.txt.setText(used ? '' : EMOJI[v]);
+    });
+
+    // 쌍 목록
+    this.pairObjs.forEach((obj, i) => {
+      if (i < gs.pairs.length) {
+        const p = gs.pairs[i], active = gs.active === i;
+        obj.bg.setVisible(true).setAlpha(p.placed ? 0.3 : 1).setStrokeStyle(2, active ? 0xe94560 : 0x333333);
+        obj.dTxt.setVisible(true).setText(`${EMOJI[p.a]} ${EMOJI[p.b]}`).setAlpha(p.placed ? 0.3 : 1);
+        obj.dirTxt.setVisible(true).setText(p.dir === 'v' ? '↕ 세로' : '↔ 가로').setAlpha(p.placed ? 0.3 : 1);
+      } else {
+        obj.bg.setVisible(false); obj.dTxt.setVisible(false); obj.dirTxt.setVisible(false);
+      }
+    });
+  }
+}
+
+// GameOverScene: 게임 오버, 최종 점수, 다시 시작
+class GameOverScene extends Phaser.Scene {
+  constructor() { super('GameOverScene'); }
+  create(data) {
+    const W = this.scale.width, H = this.scale.height;
+    this.cameras.main.fadeIn(400);
+    this.add.rectangle(0, 0, W, H, 0x1a1a2e).setOrigin(0);
+
+    this.add.text(W / 2, H / 2 - 130, 'GAME OVER', {
+      fontSize: '58px', fontFamily: 'system-ui', color: '#e94560', fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    this.add.text(W / 2, H / 2 - 35, `최종 점수: ${data.score}`, {
+      fontSize: '32px', fontFamily: 'system-ui', color: '#ffffff'
+    }).setOrigin(0.5);
+
+    this.add.text(W / 2, H / 2 + 25, `도달 라운드: ${data.round}`, {
+      fontSize: '20px', fontFamily: 'system-ui', color: '#aaaaaa'
+    }).setOrigin(0.5);
+
+    const btn = this.add.rectangle(W / 2, H / 2 + 110, 220, 54, 0xe94560).setInteractive();
+    this.add.text(W / 2, H / 2 + 110, '다시 시작', { fontSize: '24px', fontFamily: 'system-ui', color: '#fff' }).setOrigin(0.5);
+    btn.on('pointerover', () => btn.setFillStyle(0xc73652));
+    btn.on('pointerout', () => btn.setFillStyle(0xe94560));
+    btn.on('pointerdown', () => {
+      this.cameras.main.fade(300, 0, 0, 0);
+      this.time.delayedCall(300, () => this.scene.start('GameScene'));
+    });
+  }
+}
+
+// Phaser 설정
+new Phaser.Game({
+  type: Phaser.CANVAS,
+  width: 800,
+  height: 760,
+  backgroundColor: '#1a1a2e',
+  scene: [BootScene, TitleScene, GameScene, GameOverScene],
+  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+  parent: document.body,
+});
+</script>
+</body>
+</html>

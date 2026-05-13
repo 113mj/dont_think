@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주사위 스택</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --surface2: #0f3460;
+  --accent: #e94560;
+  --accent-dark: #c73652;
+  --text: #eee;
+  --muted: #888;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  gap: 10px;
+}
+
+h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 2px; }
+
+#stats { display: flex; gap: 12px; }
+.stat {
+  background: var(--surface);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.88rem;
+}
+.stat b { color: #fff; }
+
+#game {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* 보드 */
+#board-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+
+#col-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 58px);
+  gap: 2px;
+}
+.col-btn {
+  width: 58px; height: 32px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.1s;
+}
+.col-btn:hover:not(:disabled) { background: var(--accent-dark); }
+.col-btn:disabled { background: #2a2a3e; cursor: not-allowed; }
+
+#grid {
+  display: grid;
+  grid-template-columns: repeat(4, 58px);
+  grid-template-rows: repeat(16, 52px);
+  gap: 2px;
+  padding: 4px;
+  background: var(--surface2);
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+}
+.cell {
+  width: 58px; height: 52px;
+  background: var(--surface);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+}
+.cell.blocker { color: #ff5555; font-size: 1.3rem; font-weight: bold; }
+
+/* 컨트롤 */
+#ctrl-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 230px;
+}
+
+#phase-msg { font-size: 0.8rem; color: var(--muted); min-height: 1.2em; }
+
+#actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.btn {
+  padding: 9px 16px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background 0.1s;
+}
+.btn:hover:not(:disabled) { background: var(--accent-dark); }
+.btn:disabled { background: #2a2a3e; color: #555; cursor: not-allowed; }
+.btn.sec {
+  background: transparent;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+}
+.btn.sec:hover:not(:disabled) { background: rgba(233,69,96,0.12); }
+
+.sec-title {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 7px;
+}
+
+#pool {
+  display: grid;
+  grid-template-columns: repeat(5, 52px);
+  gap: 6px;
+}
+.die {
+  width: 52px; height: 52px;
+  background: var(--surface);
+  border: 2px solid #383858;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.1s, background 0.1s;
+}
+.die:hover:not(.used):not(.sel) { border-color: #666; }
+.die.sel { border-color: var(--accent); background: #2d1826; }
+.die.used { opacity: 0.2; cursor: default; }
+
+#pairs-list { display: flex; flex-direction: column; gap: 6px; }
+.pair-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 2px solid #333;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.8rem;
+  transition: border-color 0.1s;
+}
+.pair-row:hover:not(.placed) { border-color: #666; }
+.pair-row.active { border-color: var(--accent); }
+.pair-row.placed { opacity: 0.3; cursor: default; }
+.pair-row .dtag { margin-left: auto; font-size: 0.75rem; color: var(--muted); }
+
+/* 게임오버 */
+#overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.78);
+  align-items: center; justify-content: center;
+  z-index: 200;
+}
+#overlay.show { display: flex; }
+#overlay-box {
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  padding: 36px 52px;
+  text-align: center;
+}
+#overlay-box h2 { font-size: 2rem; color: var(--accent); margin-bottom: 8px; }
+.score-line { font-size: 1.3rem; margin-bottom: 24px; }
+.score-line b { color: #fff; }
+
+/* 체인 알림 */
+#chain-msg {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: bold;
+  padding: 14px 32px;
+  border-radius: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 100;
+}
+#chain-msg.show { opacity: 1; }
+
+@media (max-width: 600px) {
+  #grid {
+    grid-template-columns: repeat(4, 50px);
+    grid-template-rows: repeat(16, 44px);
+  }
+  .cell { width: 50px; height: 44px; font-size: 1.9rem; }
+  .cell.blocker { font-size: 1.1rem; }
+  #col-btns { grid-template-columns: repeat(4, 50px); }
+  .col-btn { width: 50px; }
+  #ctrl-col { width: 200px; }
+  #pool { grid-template-columns: repeat(5, 44px); }
+  .die { width: 44px; height: 44px; font-size: 1.9rem; }
+  .pair-row { font-size: 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<h1>주사위 스택</h1>
+
+<div id="stats">
+  <div class="stat">점수 <b id="score">0</b></div>
+  <div class="stat">라운드 <b id="round">1</b></div>
+  <div class="stat">남은 쌍 <b id="pairs-left">—</b></div>
+</div>
+
+<div id="game">
+  <div id="board-col">
+    <div id="col-btns"></div>
+    <div id="grid"></div>
+  </div>
+  <div id="ctrl-col">
+    <div id="phase-msg"></div>
+    <div id="actions"></div>
+    <div>
+      <div class="sec-title">주사위 풀</div>
+      <div id="pool"></div>
+    </div>
+    <div>
+      <div class="sec-title">구성된 쌍</div>
+      <div id="pairs-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="overlay">
+  <div id="overlay-box">
+    <h2>GAME OVER</h2>
+    <div class="score-line">최종 점수: <b id="final-score">0</b></div>
+    <button class="btn" onclick="restart()">다시 시작</button>
+  </div>
+</div>
+
+<div id="chain-msg"></div>
+
+<script>
+const EMOJI = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
+const C = 4, R = 16;
+
+// 전체 게임 상태
+const st = {
+  grid: [],
+  score: 0,
+  round: 1,
+  phase: 'roll',    // 'roll' | 'pairing' | 'dropping' | 'gameover'
+  pool: [],         // 길이 10, null = 이미 사용됨
+  sel: [],          // 현재 선택된 주사위 인덱스
+  pairs: [],        // {a, b, dir:'v'|'h', placed:bool}
+  active: null,     // 활성화된 쌍 인덱스
+  dir: 'v',
+};
+
+function initGrid() {
+  st.grid = Array.from({length: R}, () => Array(C).fill(null));
+}
+
+const d6 = () => Math.ceil(Math.random() * 6);
+
+// 굴리기 → pairing 단계 시작
+function startRoll() {
+  st.pool = Array.from({length: 10}, d6);
+  st.sel = [];
+  st.pairs = [];
+  st.active = null;
+  st.dir = 'v';
+  st.phase = 'pairing';
+  render();
+}
+
+// 주사위 선택/해제
+function selectDie(i) {
+  if (st.phase !== 'pairing' || st.pool[i] === null) return;
+  if (st.sel.includes(i)) {
+    st.sel = st.sel.filter(x => x !== i);
+  } else if (st.sel.length < 2) {
+    st.sel = [...st.sel, i];
+  }
+  render();
+}
+
+// 선택된 2개를 쌍으로 확정
+function confirmPair() {
+  if (st.sel.length !== 2) return;
+  const [a, b] = st.sel;
+  st.pairs.push({a: st.pool[a], b: st.pool[b], dir: st.dir, placed: false});
+  st.pool[a] = st.pool[b] = null;
+  st.sel = [];
+  if (st.pairs.length === 5) {
+    st.phase = 'dropping';
+    st.active = 0;
+    st.dir = st.pairs[0].dir;
+  }
+  render();
+}
+
+// 방향 토글
+function toggleDir() {
+  st.dir = st.dir === 'v' ? 'h' : 'v';
+  if (st.phase === 'dropping' && st.active !== null) {
+    st.pairs[st.active].dir = st.dir;
+  }
+  render();
+}
+
+// 쌍 활성화
+function setPair(i) {
+  if (st.phase !== 'dropping' || st.pairs[i].placed) return;
+  st.active = i;
+  st.dir = st.pairs[i].dir;
+  render();
+}
+
+// 해당 열의 가장 아래 빈 행 반환 (없으면 -1)
+function topRow(col) {
+  for (let r = R - 1; r >= 0; r--)
+    if (st.grid[r][col] === null) return r;
+  return -1;
+}
+
+// 현재 활성 쌍을 col에 떨어뜨릴 수 있는지 확인
+function canDrop(col) {
+  if (st.active === null) return false;
+  const p = st.pairs[st.active];
+  if (!p || p.placed) return false;
+  if (p.dir === 'v') return topRow(col) >= 1;           // 세로: 2칸 필요
+  return col < C - 1 && topRow(col) >= 0 && topRow(col + 1) >= 0; // 가로: 옆 열 필요
+}
+
+// 열 클릭 → 배치
+function drop(col) {
+  if (st.phase !== 'dropping' || !canDrop(col)) return;
+  const p = st.pairs[st.active];
+
+  if (p.dir === 'v') {
+    const r = topRow(col);
+    st.grid[r][col] = p.a;       // 아래
+    st.grid[r - 1][col] = p.b;   // 위
+  } else {
+    const r = Math.min(topRow(col), topRow(col + 1));
+    st.grid[r][col] = p.a;
+    st.grid[r][col + 1] = p.b;
+  }
+  p.placed = true;
+
+  if (gameOverCheck()) { endGame(); return; }
+
+  const nxt = st.pairs.findIndex(x => !x.placed);
+  if (nxt >= 0) {
+    st.active = nxt;
+    st.dir = st.pairs[nxt].dir;
+    render();
+  } else {
+    st.active = null;
+    resolve();
+  }
+}
+
+// 5쌍 배치 후 클리어 처리
+function resolve() {
+  let chain = 0;
+  let again = true;
+
+  function step() {
+    const del = new Set();
+
+    // 가로 (4열 전체 동일)
+    for (let r = 0; r < R; r++) {
+      const v = st.grid[r][0];
+      if (v !== null && [1,2,3].every(c => st.grid[r][c] === v))
+        for (let c = 0; c < C; c++) del.add(r * C + c);
+    }
+
+    // 세로 4연속
+    for (let c = 0; c < C; c++)
+      for (let r = 0; r <= R - 4; r++) {
+        const v = st.grid[r][c];
+        if (v !== null && [1,2,3].every(i => st.grid[r+i][c] === v))
+          for (let i = 0; i < 4; i++) del.add((r+i) * C + c);
+      }
+
+    // 우하향 대각선 (4열 그리드: col 0에서만 가능)
+    for (let r = 0; r <= R - 4; r++) {
+      const v = st.grid[r][0];
+      if (v !== null && [1,2,3].every(i => st.grid[r+i][i] === v))
+        for (let i = 0; i < 4; i++) del.add((r+i) * C + i);
+    }
+
+    // 우상향 대각선 (col 3에서만 가능)
+    for (let r = 0; r <= R - 4; r++) {
+      const v = st.grid[r][3];
+      if (v !== null && [1,2,3].every(i => st.grid[r+i][3-i] === v))
+        for (let i = 0; i < 4; i++) del.add((r+i) * C + (3-i));
+    }
+
+    if (del.size) {
+      chain++;
+      st.score += 100 * chain;
+      del.forEach(k => { st.grid[~~(k/C)][k%C] = null; });
+      gravity();
+      render();
+      showChain(chain);
+      setTimeout(step, 600);
+    } else {
+      addBlockers();
+      if (gameOverCheck()) { endGame(); return; }
+      st.round++;
+      st.phase = 'roll';
+      render();
+    }
+  }
+
+  render();
+  setTimeout(step, 200);
+}
+
+// 중력: null을 위로, 값을 아래로 정렬
+function gravity() {
+  for (let c = 0; c < C; c++) {
+    const vals = [];
+    for (let r = 0; r < R; r++)
+      if (st.grid[r][c] !== null) vals.push(st.grid[r][c]);
+    for (let r = 0; r < R; r++)
+      st.grid[r][c] = r < R - vals.length ? null : vals[r - (R - vals.length)];
+  }
+}
+
+// 방해 주사위 3개 랜덤 배치 후 중력
+function addBlockers() {
+  const empty = [];
+  for (let r = 0; r < R; r++)
+    for (let c = 0; c < C; c++)
+      if (st.grid[r][c] === null) empty.push([r, c]);
+  for (let i = empty.length - 1; i > 0; i--) {
+    const j = ~~(Math.random() * (i + 1));
+    [empty[i], empty[j]] = [empty[j], empty[i]];
+  }
+  for (let i = 0; i < Math.min(3, empty.length); i++)
+    st.grid[empty[i][0]][empty[i][1]] = 'X';
+  gravity();
+}
+
+// 0행에 주사위가 있으면 게임 오버
+function gameOverCheck() {
+  return st.grid[0].some(v => v !== null);
+}
+
+function endGame() {
+  st.phase = 'gameover';
+  document.getElementById('final-score').textContent = st.score;
+  document.getElementById('overlay').classList.add('show');
+  render();
+}
+
+function restart() {
+  initGrid();
+  Object.assign(st, {score:0, round:1, phase:'roll', pool:[], sel:[], pairs:[], active:null, dir:'v'});
+  document.getElementById('overlay').classList.remove('show');
+  render();
+}
+
+function showChain(n) {
+  if (n < 2) return;
+  const el = document.getElementById('chain-msg');
+  el.textContent = `CHAIN x${n}! +${100 * n}`;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 500);
+}
+
+// 단일 렌더 함수
+function render() {
+  document.getElementById('score').textContent = st.score;
+  document.getElementById('round').textContent = st.round;
+  const pLeft = st.phase === 'pairing' ? 5 - st.pairs.length
+              : st.phase === 'dropping' ? st.pairs.filter(p => !p.placed).length
+              : '—';
+  document.getElementById('pairs-left').textContent = pLeft;
+
+  // 그리드
+  const gEl = document.getElementById('grid');
+  gEl.innerHTML = '';
+  for (let r = 0; r < R; r++)
+    for (let c = 0; c < C; c++) {
+      const el = document.createElement('div');
+      const v = st.grid[r][c];
+      el.className = 'cell' + (v === 'X' ? ' blocker' : '');
+      el.textContent = v === 'X' ? '✕' : v ? EMOJI[v] : '';
+      gEl.appendChild(el);
+    }
+
+  // 열 버튼
+  const cb = document.getElementById('col-btns');
+  cb.innerHTML = '';
+  for (let c = 0; c < C; c++) {
+    const b = document.createElement('button');
+    b.className = 'col-btn';
+    b.textContent = '▼';
+    b.disabled = st.phase !== 'dropping' || !canDrop(c);
+    b.addEventListener('click', () => drop(c));
+    cb.appendChild(b);
+  }
+
+  // 페이즈 안내
+  const msgs = {
+    roll: '주사위를 굴려 라운드를 시작하세요',
+    pairing: `주사위 2개 선택 후 확정 (${st.pairs.length}/5)`,
+    dropping: '쌍 선택 → 방향 설정 → ▼ 버튼으로 배치',
+    gameover: '게임 오버',
+  };
+  document.getElementById('phase-msg').textContent = msgs[st.phase] || '';
+
+  // 액션 버튼
+  const ab = document.getElementById('actions');
+  ab.innerHTML = '';
+  const mk = (txt, fn, cls = '', off = false) => {
+    const b = document.createElement('button');
+    b.className = 'btn' + (cls ? ' ' + cls : '');
+    b.textContent = txt;
+    b.disabled = off;
+    b.addEventListener('click', fn);
+    ab.appendChild(b);
+  };
+  if (st.phase === 'roll') mk('🎲 굴리기', startRoll);
+  if (st.phase === 'pairing') {
+    mk('쌍 확정', confirmPair, '', st.sel.length !== 2);
+    mk(st.dir === 'v' ? '세로 ↕' : '가로 ↔', toggleDir, 'sec');
+  }
+  if (st.phase === 'dropping')
+    mk(st.dir === 'v' ? '세로 ↕' : '가로 ↔', toggleDir, 'sec');
+
+  // 주사위 풀
+  const pool = document.getElementById('pool');
+  pool.innerHTML = '';
+  st.pool.forEach((v, i) => {
+    const d = document.createElement('div');
+    d.className = 'die' + (v === null ? ' used' : st.sel.includes(i) ? ' sel' : '');
+    if (v !== null) {
+      d.textContent = EMOJI[v];
+      d.addEventListener('click', () => selectDie(i));
+    }
+    pool.appendChild(d);
+  });
+
+  // 쌍 목록
+  const pl = document.getElementById('pairs-list');
+  pl.innerHTML = '';
+  st.pairs.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'pair-row' + (st.active === i ? ' active' : '') + (p.placed ? ' placed' : '');
+    el.innerHTML = `${EMOJI[p.a]} ${EMOJI[p.b]} <span class="dtag">${p.dir === 'v' ? '↕ 세로' : '↔ 가로'}</span>`;
+    el.addEventListener('click', () => setPair(i));
+    pl.appendChild(el);
+  });
+}
+
+initGrid();
+render();
+</script>
+</body>
+</html>
