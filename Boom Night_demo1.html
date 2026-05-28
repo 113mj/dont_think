@@ -17,6 +17,7 @@ const LANE_XS = [52, 146, 240, 334, 428];
 
 class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
+  preload() { this.load.audio('bgm', 'Ghoulish_Groove_1.mp3'); }
   create() { this.scene.start('TitleScene'); }
 }
 
@@ -102,6 +103,10 @@ class GameScene extends Phaser.Scene {
     this.waveIdx   = 0;
     this.shootTimer = 0;
 
+    // BPM 130 박자 정보 (시각 효과용)
+    this.beatInterval = 60 / 130;  // 0.462s
+    this.beatOffset   = 0.51;      // 첫 비트 시작 offset
+
     this.bgGfx       = this.add.graphics().setDepth(0);
     this.enemyGfx    = this.add.graphics().setDepth(3);
     this.itemGfx     = this.add.graphics().setDepth(3);
@@ -116,58 +121,79 @@ class GameScene extends Phaser.Scene {
     this.zKey    = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
 
     this.cameras.main.fadeIn(500);
+
+    // 배경 음악 (로딩 실패 시 게임은 계속 진행)
+    this.bgm = null;
+    if (this.cache.audio.exists('bgm')) {
+      this.sound.stopAll();
+      this.bgm = this.sound.add('bgm', { loop: true, volume: 0.5 });
+      this.bgm.play();
+    }
   }
 
-  // 스테이지 1 웨이브 데이터 [시간(초), 타입, 레인]
+  // 스테이지 1 웨이브 데이터 — BPM 130 박자 정렬
+  // beat=0.462s, bar(4beat)=1.846s, 시작 offset=0.51s
+  // 형식: [시간(초), '타입', 레인(0~4, -1=랜덤)]
+  // 타입: 'bat', 'gbat', 'skeleton', 'pskeleton', 'item_bomb', 'item_fever', 'boss'
   buildStage1() {
     return [
-      // --- 초반: 박쥐 입문 ---
-      [3,   'bat', 2],
-      [3.5, 'bat', 1], [3.5, 'bat', 3],
-      [4.5, 'bat', 0], [4.5, 'bat', 4],
-      [5.5, 'bat', 2],
-      [6,   'bat', 1], [6,   'bat', 3],
-      [7,   'gbat', 2],
-      [7.8, 'bat', 0], [7.8, 'bat', 4],
-      [9,   'gbat', 1], [9,   'gbat', 3],
-      [10,  'bat', 2],
-      [10.5,'bat', 0], [10.5,'bat', 4],
-      [11.5,'gbat', 2],
-      [12,  'bat', 1], [12,  'bat', 3],
+      // === 도입부 (bar 1~8): 박쥐 ===
+      [2.36,  'bat', 2],
+      [3.28,  'bat', 1],  [3.28,  'bat', 3],
+      [4.20,  'bat', 0],  [4.20,  'bat', 4],
+      [5.13,  'bat', 2],
+      [6.05,  'gbat', 2],
+      [6.97,  'bat', 1],  [6.97,  'bat', 3],
+      [7.89,  'bat', 0],
+      [8.82,  'bat', 4],
+      [9.74,  'gbat', 1], [9.74,  'gbat', 3],
+      [10.66, 'bat', 2],
+      [11.59, 'bat', 0],  [11.59, 'bat', 4],
+      [12.51, 'gbat', 2],
+      [13.43, 'bat', 1],  [13.43, 'bat', 3],
+      [14.36, 'bat', 2],
+      [15.28, 'item_bomb', 2],
 
-      // --- 중반: 해골 등장 ---
-      [16,  'skeleton', 0], [16,  'skeleton', 4],
-      [17,  'bat', 2],
-      [18,  'bat', 1],  [18,  'bat', 3],
-      [19,  'gbat', 2],
-      [20,  'skeleton', 2],
-      [21,  'bat', 0],  [21,  'bat', 4],
-      [22,  'gbat', 1], [22,  'gbat', 3],
-      [23,  'skeleton', 1], [23, 'skeleton', 3],
+      // === 중반 (bar 8.5~14): 해골 등장 ===
+      [16.20, 'skeleton', 0], [16.20, 'skeleton', 4],
+      [17.12, 'bat', 2],
+      [18.05, 'bat', 1],  [18.05, 'bat', 3],
+      [18.97, 'gbat', 2],
+      [19.89, 'skeleton', 2],
+      [20.82, 'bat', 0],  [20.82, 'bat', 4],
+      [21.74, 'gbat', 1], [21.74, 'gbat', 3],
+      [22.66, 'skeleton', 1], [22.66, 'skeleton', 3],
+      [23.59, 'bat', 2],
+      [24.51, 'gbat', 2],
+      [25.43, 'skeleton', 0],
+      [26.35, 'item_fever', -1],
 
-      // --- 중후반: 귀신 해골 + 혼합 ---
-      [27,  'pskeleton', 2],
-      [27.5,'bat', 0],  [27.5,'bat', 4],
-      [28,  'skeleton', 1], [28, 'skeleton', 3],
-      [29,  'gbat', 2],
-      [30,  'pskeleton', 0],
-      [30.5,'bat', 1],  [30.5,'bat', 2], [30.5,'bat', 3],
-      [31,  'skeleton', 4],
-      [32,  'gbat', 1], [32,  'gbat', 3],
-      [33,  'pskeleton', 4],
-      [34,  'bat', 0],  [34, 'bat', 2],  [34, 'bat', 4],
+      // === 중후반 (bar 14.5~20): 귀신 해골 ===
+      [27.28, 'pskeleton', 2],
+      [28.20, 'bat', 0],  [28.20, 'bat', 4],
+      [29.12, 'skeleton', 1], [29.12, 'skeleton', 3],
+      [30.05, 'gbat', 2],
+      [30.97, 'pskeleton', 0],
+      [31.89, 'bat', 1],  [31.89, 'bat', 3],
+      [32.82, 'pskeleton', 4],
+      [33.74, 'bat', 2],
+      [34.66, 'skeleton', 1],
+      [35.58, 'gbat', 0],  [35.58, 'gbat', 4],
+      [36.51, 'pskeleton', 2],
+      [37.43, 'item_bomb', -1],
 
-      // --- 후반: 밀도 높은 구간 ---
-      [38,  'bat', 0], [38,  'bat', 1], [38, 'bat', 2], [38, 'bat', 3], [38, 'bat', 4],
-      [38.6,'gbat', 0],[38.6,'gbat', 4],
-      [39,  'skeleton', 2],
-      [39.5,'pskeleton', 1], [39.5,'pskeleton', 3],
-      [40,  'bat', 0],  [40, 'bat', 4],
-      [40.5,'gbat', 2],
-      [41,  'skeleton', 0], [41, 'skeleton', 4],
+      // === 후반 (bar 20.5~24): 혼합 ===
+      [38.35, 'bat', 0],  [38.35, 'bat', 2], [38.35, 'bat', 4],
+      [39.28, 'gbat', 1], [39.28, 'gbat', 3],
+      [40.20, 'skeleton', 2],
+      [41.12, 'pskeleton', 1], [41.12, 'pskeleton', 3],
+      [42.05, 'bat', 0],  [42.05, 'bat', 4],
+      [42.97, 'gbat', 2],
+      [43.89, 'skeleton', 0], [43.89, 'skeleton', 4],
+      [44.81, 'bat', 2],
 
-      // --- 보스 ---
-      [46, 'boss', 2],
+      // === 보스 (bar 25) ===
+      [46.66, 'boss', 2],
     ];
   }
 
@@ -268,9 +294,17 @@ class GameScene extends Phaser.Scene {
     const t = this.gs.elapsed;
     while (this.waveIdx < this.waveQueue.length && this.waveQueue[this.waveIdx][0] <= t) {
       const [, type, lane] = this.waveQueue[this.waveIdx++];
+      const l = lane < 0 ? ~~(Math.random()*5) : lane;
       if (type === 'boss') this.spawnBoss();
-      else this.spawnEnemy(type, lane < 0 ? ~~(Math.random()*5) : lane);
+      else if (type === 'item_bomb')  this.spawnMapItem('bomb',  l);
+      else if (type === 'item_fever') this.spawnMapItem('fever', l);
+      else this.spawnEnemy(type, l);
     }
+  }
+
+  spawnMapItem(type, lane) {
+    // 맵 상단에서 직접 내려오는 아이템 (적 드롭보다 크고 느림)
+    this.items.push({ x: this.laneXs[lane], y: -20, vy: 50, type, size: 15, alive: true });
   }
 
   spawnEnemy(type, lane) {
@@ -304,7 +338,7 @@ class GameScene extends Phaser.Scene {
       settled: false, settleY: 118,
       pattern: 0, phaseTimer: 0, patternTimer: 0,
       moveDir: 1, charging: false, chargeFired: false, chargeTimer: 0,
-      prisonTimer: 0,
+      prisonTimer: 0, prisonPause: 0,
     };
     this.enemies.push(this.boss);
     this.bossWarning.setAlpha(1).setScale(1);
@@ -442,14 +476,21 @@ class GameScene extends Phaser.Scene {
           }
 
         } else if (e.pattern === 2) {
-          // 감옥 패턴: 왼→오 이동, 진행 방향 기준 4개 레인에 탄 지속 생성
+          // 감옥 패턴: 왼→오 이동, 진행 반대쪽 레인 1개 비우고 4개 발사
           e.prisonTimer += dt;
+          if (e.prisonPause > 0) e.prisonPause -= dt;
           e.x += e.moveDir * 80 * dt;
-          if (e.x > W - 55) { e.x = W - 55; e.moveDir = -1; }
-          if (e.x < 55)     { e.x = 55;     e.moveDir =  1; }
-          if (e.prisonTimer >= 0.55) {
+          if (e.x > W - 55) {
+            e.x = W - 55; e.moveDir = -1;
+            // 방향 전환 후 발사 휴지 (플레이어가 피할 시간 확보)
+            e.prisonPause = 0.9; e.prisonTimer = 0;
+          }
+          if (e.x < 55) {
+            e.x = 55; e.moveDir = 1;
+            e.prisonPause = 0.9; e.prisonTimer = 0;
+          }
+          if (e.prisonPause <= 0 && e.prisonTimer >= 0.85) {
             e.prisonTimer = 0;
-            // 이동 방향 반대쪽 레인 1개 비우고 나머지 4개 발사
             const startL = e.moveDir > 0 ? 0 : 1;
             for (let l = startL; l < startL + 4; l++) {
               this.enemyBullets.push({ x: this.laneXs[l], y: e.y + 45,
@@ -620,6 +661,7 @@ class GameScene extends Phaser.Scene {
   }
 
   doStageClear() {
+    if (this.bgm) this.bgm.stop();
     this.add.text(W/2, H/2 - 20, 'STAGE CLEAR!', {
       fontSize: '48px', fontFamily: 'system-ui', color: '#ffff44', fontStyle: 'bold',
       stroke: '#000', strokeThickness: 6,
@@ -632,6 +674,7 @@ class GameScene extends Phaser.Scene {
 
   endGame() {
     this.gs.lives = 0;
+    if (this.bgm) this.bgm.stop();
     this.cameras.main.fade(500, 0, 0, 0);
     this.time.delayedCall(500, () => this.scene.start('GameOverScene', { score: this.gs.score }));
   }
@@ -639,14 +682,31 @@ class GameScene extends Phaser.Scene {
   renderAll() {
     const p = this.player;
 
+    // 비트 펄스 계산 (BPM 130)
+    const bElapsed  = Math.max(0, this.gs.elapsed - this.beatOffset);
+    const beatPhase = (bElapsed % this.beatInterval) / this.beatInterval;
+    const barPhase  = (bElapsed % (this.beatInterval * 4)) / (this.beatInterval * 4);
+    const beatPulse = Math.max(0, 1 - beatPhase * 5);   // 비트마다 짧은 플래시
+    const barPulse  = Math.max(0, 1 - barPhase  * 8);   // 마디마다 강한 플래시
+
     // 배경
     this.bgGfx.clear();
     this.bgGfx.fillStyle(0x080010);
     this.bgGfx.fillRect(0, 0, W, H);
 
-    // 달
-    this.bgGfx.fillStyle(0xffeeaa, 0.15);
+    // 달 (비트에 맞춰 미세하게 빛남)
+    this.bgGfx.fillStyle(0xffeeaa, 0.15 + barPulse * 0.08);
     this.bgGfx.fillCircle(W - 68, 88, 52);
+
+    // 비트 배경 플래시
+    if (beatPulse > 0.01) {
+      this.bgGfx.fillStyle(0x4400aa, beatPulse * 0.06);
+      this.bgGfx.fillRect(0, 0, W, H);
+    }
+    if (barPulse > 0.01) {
+      this.bgGfx.fillStyle(0x8800ff, barPulse * 0.05);
+      this.bgGfx.fillRect(0, 0, W, H);
+    }
 
     // 레인 그리드
     const lb = [0, 99, 193, 287, 381, W];
@@ -654,17 +714,19 @@ class GameScene extends Phaser.Scene {
       this.bgGfx.fillStyle(0x330033, i%2===0 ? 0.06 : 0.03);
       this.bgGfx.fillRect(lb[i], 42, lb[i+1]-lb[i], H-74);
     }
-    this.bgGfx.lineStyle(1, 0x552255, 0.45);
+    this.bgGfx.lineStyle(1, 0x552255, 0.45 + beatPulse * 0.25);
     for (let i = 1; i < 5; i++) {
       this.bgGfx.beginPath();
       this.bgGfx.moveTo(lb[i], 42);
       this.bgGfx.lineTo(lb[i], H-32);
       this.bgGfx.strokePath();
     }
+    // 레인 마커: 비트에 맞춰 펄스
     for (let i = 0; i < 5; i++) {
       const active = i === p.lane;
-      this.bgGfx.fillStyle(active ? 0xff8800 : 0x553355, active ? 0.85 : 0.3);
-      this.bgGfx.fillRect(this.laneXs[i]-4, H-36, 8, 5);
+      const mH = 5 + (active ? beatPulse * 7 : beatPulse * 3);
+      this.bgGfx.fillStyle(active ? 0xff8800 : 0x8844bb, active ? 0.85 : (0.28 + beatPulse * 0.35));
+      this.bgGfx.fillRect(this.laneXs[i]-4, H-36, 8, mH);
     }
 
     // 피버 배경 오버레이
