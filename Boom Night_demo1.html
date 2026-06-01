@@ -49,11 +49,14 @@ class TitleScene extends Phaser.Scene {
     g.fillCircle(W/2 - 12, H/2 - 28, 7);
     g.fillCircle(W/2 + 12, H/2 - 28, 7);
 
-    this.add.text(W/2, H/2 + 42, '↑↓ 이동  |  ←→ 레인 이동', {
-      fontSize: '15px', fontFamily: 'system-ui', color: '#ffbb88'
+    this.add.text(W/2, H/2 + 38, '방향키 : 이동 + 공격 (박자에 맞게!)', {
+      fontSize: '14px', fontFamily: 'system-ui', color: '#ffbb88'
     }).setOrigin(0.5);
-    this.add.text(W/2, H/2 + 68, 'Z : 폭탄 사용', {
-      fontSize: '14px', fontFamily: 'system-ui', color: '#ff9966'
+    this.add.text(W/2, H/2 + 60, '10콤보마다 점수 배율 +0.1x', {
+      fontSize: '13px', fontFamily: 'system-ui', color: '#ffaa66'
+    }).setOrigin(0.5);
+    this.add.text(W/2, H/2 + 82, 'Z : 폭탄 사용', {
+      fontSize: '13px', fontFamily: 'system-ui', color: '#ff9966'
     }).setOrigin(0.5);
 
     const bg = this.add.graphics();
@@ -84,9 +87,10 @@ class GameScene extends Phaser.Scene {
       fever: false, feverTimer: 0,
       invincible: false,
       bossActive: false, elapsed: 0,
+      combo: 0, maxCombo: 0,
     };
 
-    this.bullets      = [];
+    this.lasers       = [];
     this.enemyBullets = [];
     this.enemies      = [];
     this.items        = [];
@@ -101,7 +105,6 @@ class GameScene extends Phaser.Scene {
 
     this.waveQueue = this.buildStage1();
     this.waveIdx   = 0;
-    this.shootTimer = 0;
 
     // BPM 130 박자 정보 (시각 효과용)
     this.beatInterval = 60 / 130;  // 0.462s
@@ -110,6 +113,7 @@ class GameScene extends Phaser.Scene {
     this.bgGfx       = this.add.graphics().setDepth(0);
     this.enemyGfx    = this.add.graphics().setDepth(3);
     this.itemGfx     = this.add.graphics().setDepth(3);
+    this.laserGfx    = this.add.graphics().setDepth(4);
     this.bulletGfx   = this.add.graphics().setDepth(4);
     this.playerGfx   = this.add.graphics().setDepth(5);
     this.particleGfx = this.add.graphics().setDepth(6);
@@ -205,6 +209,9 @@ class GameScene extends Phaser.Scene {
     this.scoreDisp = this.add.text(W-10, 8, '0', {
       fontSize: '18px', fontFamily: 'system-ui', color: '#ffeeaa'
     }).setOrigin(1, 0).setDepth(11);
+    this.comboDisp = this.add.text(W/2, 8, '', {
+      fontSize: '13px', fontFamily: 'system-ui', color: '#ffcc88'
+    }).setOrigin(0.5, 0).setDepth(11);
 
     this.add.rectangle(0, H-32, W, 32, 0x000000, 0.72).setOrigin(0).setDepth(10);
     this.bombDisp = this.add.text(12, H-16, '💣 x2', {
@@ -238,18 +245,22 @@ class GameScene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0).setDepth(20);
 
     this.flashRect = this.add.rectangle(0, 0, W, H, 0xff0000, 0).setOrigin(0).setDepth(25);
+
+    this.beatJudge = this.add.text(W/2, H * 0.52, '', {
+      fontSize: '20px', fontFamily: 'system-ui', color: '#ffff44', fontStyle: 'bold',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0.5).setAlpha(0).setDepth(22);
   }
 
   update(time, delta) {
     if (this.gs.lives <= 0) return;
     const dt = delta / 1000;
     this.gs.elapsed  += dt;
-    this.shootTimer  += dt;
 
     this.handleInput(dt);
-    this.autoShoot();
     this.processWaves();
     this.updateBullets(dt);
+    this.updateLasers(dt);
     this.updateEnemies(dt);
     this.updateItems(dt);
     this.updateParticles(dt);
@@ -263,8 +274,14 @@ class GameScene extends Phaser.Scene {
     const p = this.player;
     const leftJust  = Phaser.Input.Keyboard.JustDown(this.cursors.left);
     const rightJust = Phaser.Input.Keyboard.JustDown(this.cursors.right);
-    if (leftJust  && p.lane > 0) { p.lane--; this.moveLane(); }
-    if (rightJust && p.lane < 4) { p.lane++; this.moveLane(); }
+    const upJust    = Phaser.Input.Keyboard.JustDown(this.cursors.up);
+    const downJust  = Phaser.Input.Keyboard.JustDown(this.cursors.down);
+
+    let moved = false;
+    if (leftJust  && p.lane > 0) { p.lane--; this.moveLane(); moved = true; }
+    if (rightJust && p.lane < 4) { p.lane++; this.moveLane(); moved = true; }
+    if (upJust || downJust) moved = true;
+    if (moved) this.onPlayerMove();
 
     let tvy = 0;
     if (this.cursors.up.isDown)   tvy = -175;
@@ -283,11 +300,79 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  autoShoot() {
-    if (this.shootTimer < 0.5) return;
-    this.shootTimer = 0;
+  onPlayerMove() {
     const p = this.player;
-    this.bullets.push({ x: p.x, y: p.y - p.h, vy: -530, dmg: 1, alive: true });
+    // 이동 후 위치(새 레인)에서 레이저 발사
+    const laserX = this.laneXs[p.lane];
+    this.lasers.push({ x: laserX, fromY: p.y - p.h * 0.5, life: 0.22, maxLife: 0.22 });
+
+    // 같은 레인, 플레이어 위에 있는 적 즉시 타격
+    this.enemies.forEach(e => {
+      if (!e.alive) return;
+      if (Math.abs(e.x - laserX) < 48 && e.y < p.y) {
+        this.damageEnemy(e, 1);
+      }
+    });
+
+    // 비트 타이밍 판정 (±100ms 허용)
+    const tolerance = 0.10;
+    const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
+    const phase = bElapsed % this.beatInterval;
+    const onBeat = phase <= tolerance || phase >= (this.beatInterval - tolerance);
+
+    if (onBeat) {
+      this.gs.combo++;
+      if (this.gs.combo > this.gs.maxCombo) this.gs.maxCombo = this.gs.combo;
+      this.showBeatJudge(true);
+    } else {
+      this.gs.combo = 0;
+      this.showBeatJudge(false);
+    }
+  }
+
+  damageEnemy(e, dmg) {
+    if (!e.alive) return;
+    e.hp -= dmg;
+    this.spawnHitParticles(e.x, e.y);
+    if (e.hp > 0) return;
+    e.alive = false;
+    if (e.type === 'boss') {
+      this.gs.bossActive = false;
+      this.boss = null;
+      this.spawnExplosion(e.x, e.y, 0xff6600, 32);
+      this.cameras.main.shake(650, 0.025);
+      this.bossHpBg.setVisible(false);
+      this.bossHpFill.setVisible(false);
+      this.bossLabel.setVisible(false);
+      const bossMult = 1 + Math.floor(this.gs.combo / 10) * 0.1;
+      this.gs.score += Math.round((this.gs.fever ? 2000 : 1000) * bossMult);
+      this.doStageClear();
+    } else {
+      const pts = { bat: 100, gbat: 200, skeleton: 300, pskeleton: 400 };
+      const base = pts[e.type] || 100;
+      const mult = 1 + Math.floor(this.gs.combo / 10) * 0.1;
+      this.gs.score += Math.round((this.gs.fever ? base * 2 : base) * mult);
+      this.spawnExplosion(e.x, e.y, 0xff8800, 8);
+      this.maybeDropItem(e.x, e.y);
+    }
+  }
+
+  updateLasers(dt) {
+    this.lasers.forEach(l => l.life -= dt);
+    this.lasers = this.lasers.filter(l => l.life > 0);
+  }
+
+  showBeatJudge(hit) {
+    const combo = this.gs.combo;
+    if (hit) {
+      const mult = (1 + Math.floor(combo / 10) * 0.1).toFixed(1);
+      const txt = combo >= 10 ? `${combo} COMBO  x${mult}` : (combo > 0 ? `${combo} COMBO` : 'PERFECT');
+      this.beatJudge.setText(txt).setColor('#ffff44').setAlpha(1).setY(H * 0.52);
+    } else {
+      this.beatJudge.setText('MISS').setColor('#ff4444').setAlpha(1).setY(H * 0.52);
+    }
+    this.tweens.killTweensOf(this.beatJudge);
+    this.tweens.add({ targets: this.beatJudge, alpha: 0, y: H * 0.44, duration: 550 });
   }
 
   processWaves() {
@@ -351,13 +436,11 @@ class GameScene extends Phaser.Scene {
   }
 
   updateBullets(dt) {
-    this.bullets.forEach(b => { b.y += b.vy * dt; if (b.y < -12) b.alive = false; });
     this.enemyBullets.forEach(b => {
       if (!b.alive) return;
       b.x += b.vx * dt; b.y += b.vy * dt;
       if (b.y > H+12 || b.x < -12 || b.x > W+12 || b.y < -12) b.alive = false;
     });
-    this.bullets      = this.bullets.filter(b => b.alive);
     this.enemyBullets = this.enemyBullets.filter(b => b.alive);
   }
 
@@ -509,39 +592,6 @@ class GameScene extends Phaser.Scene {
   checkCollisions() {
     const p = this.player;
 
-    // 플레이어 탄 → 적
-    this.bullets.forEach(b => {
-      if (!b.alive) return;
-      this.enemies.forEach(e => {
-        if (!e.alive) return;
-        const dx = b.x - e.x, dy = b.y - e.y;
-        if (dx*dx + dy*dy < e.size*e.size) {
-          b.alive = false;
-          e.hp -= b.dmg;
-          this.spawnHitParticles(e.x, e.y);
-          if (e.hp <= 0) {
-            e.alive = false;
-            if (e.type === 'boss') {
-              this.gs.bossActive = false;
-              this.boss = null;
-              this.spawnExplosion(e.x, e.y, 0xff6600, 32);
-              this.cameras.main.shake(650, 0.025);
-              this.bossHpBg.setVisible(false);
-              this.bossHpFill.setVisible(false);
-              this.bossLabel.setVisible(false);
-              this.gs.score += this.gs.fever ? 2000 : 1000;
-              this.doStageClear();
-            } else {
-              const pts = { bat: 100, gbat: 200, skeleton: 300, pskeleton: 400 };
-              this.gs.score += this.gs.fever ? (pts[e.type]||100)*2 : (pts[e.type]||100);
-              this.spawnExplosion(e.x, e.y, 0xff8800, 8);
-              this.maybeDropItem(e.x, e.y);
-            }
-          }
-        }
-      });
-    });
-
     if (this.gs.invincible) return;
 
     // 적 탄 → 플레이어
@@ -658,6 +708,14 @@ class GameScene extends Phaser.Scene {
     this.scoreDisp.setText(gs.score.toLocaleString());
     this.bombDisp.setText(`💣 x${gs.bombs}`);
     this.feverDisp.setText(gs.fever ? `🔥 FEVER ${~~gs.feverTimer}s` : '');
+    if (gs.combo >= 10) {
+      const mult = (1 + Math.floor(gs.combo / 10) * 0.1).toFixed(1);
+      this.comboDisp.setText(`${gs.combo} COMBO  x${mult}`);
+    } else if (gs.combo > 0) {
+      this.comboDisp.setText(`${gs.combo} COMBO`);
+    } else {
+      this.comboDisp.setText('');
+    }
   }
 
   doStageClear() {
@@ -862,17 +920,32 @@ class GameScene extends Phaser.Scene {
       }
     });
 
-    // 총알
-    this.bulletGfx.clear();
-    // 플레이어 사탕
-    this.bullets.forEach(b => {
-      if (!b.alive) return;
-      this.bulletGfx.fillStyle(0xff88cc);
-      this.bulletGfx.fillCircle(b.x, b.y, 5);
-      this.bulletGfx.fillStyle(0xffffff, 0.55);
-      this.bulletGfx.fillCircle(b.x - 1.5, b.y - 1.5, 2);
+    // 레이저
+    this.laserGfx.clear();
+    this.lasers.forEach(l => {
+      const a = l.life / l.maxLife;
+      // 외곽 글로우
+      this.laserGfx.lineStyle(10, 0xcc44ff, a * 0.25);
+      this.laserGfx.beginPath();
+      this.laserGfx.moveTo(l.x, l.fromY);
+      this.laserGfx.lineTo(l.x, 42);
+      this.laserGfx.strokePath();
+      // 중간 빔
+      this.laserGfx.lineStyle(4, 0xff88ff, a * 0.7);
+      this.laserGfx.beginPath();
+      this.laserGfx.moveTo(l.x, l.fromY);
+      this.laserGfx.lineTo(l.x, 42);
+      this.laserGfx.strokePath();
+      // 코어 (흰색)
+      this.laserGfx.lineStyle(1.5, 0xffffff, a);
+      this.laserGfx.beginPath();
+      this.laserGfx.moveTo(l.x, l.fromY);
+      this.laserGfx.lineTo(l.x, 42);
+      this.laserGfx.strokePath();
     });
-    // 적 뼈 탄
+
+    // 적 탄
+    this.bulletGfx.clear();
     this.enemyBullets.forEach(b => {
       if (!b.alive) return;
       this.bulletGfx.fillStyle(0xeeddcc);
