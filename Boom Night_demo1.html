@@ -141,60 +141,37 @@ class GameScene extends Phaser.Scene {
   // 타입: 'bat', 'gbat', 'skeleton', 'pskeleton', 'item_bomb', 'item_fever', 'boss'
   buildStage1() {
     return [
-      // === 도입부 (bar 1~8): 박쥐 ===
+      // === 도입부 (bar 1~8): 박쥐 1~2마리씩, 간격 넓게 ===
       [2.36,  'bat', 2],
-      [3.28,  'bat', 1],  [3.28,  'bat', 3],
-      [4.20,  'bat', 0],  [4.20,  'bat', 4],
-      [5.13,  'bat', 2],
-      [6.05,  'gbat', 2],
-      [6.97,  'bat', 1],  [6.97,  'bat', 3],
-      [7.89,  'bat', 0],
-      [8.82,  'bat', 4],
-      [9.74,  'gbat', 1], [9.74,  'gbat', 3],
-      [10.66, 'bat', 2],
-      [11.59, 'bat', 0],  [11.59, 'bat', 4],
-      [12.51, 'gbat', 2],
-      [13.43, 'bat', 1],  [13.43, 'bat', 3],
-      [14.36, 'bat', 2],
+      [5.13,  'bat', 0],
+      [7.89,  'bat', 4],
+      [10.66, 'gbat', 2],
+      [13.43, 'bat', 1],
       [15.28, 'item_bomb', 2],
 
-      // === 중반 (bar 8.5~14): 해골 등장 ===
-      [16.20, 'skeleton', 0], [16.20, 'skeleton', 4],
-      [17.12, 'bat', 2],
-      [18.05, 'bat', 1],  [18.05, 'bat', 3],
-      [18.97, 'gbat', 2],
-      [19.89, 'skeleton', 2],
-      [20.82, 'bat', 0],  [20.82, 'bat', 4],
-      [21.74, 'gbat', 1], [21.74, 'gbat', 3],
-      [22.66, 'skeleton', 1], [22.66, 'skeleton', 3],
-      [23.59, 'bat', 2],
-      [24.51, 'gbat', 2],
-      [25.43, 'skeleton', 0],
+      // === 중반 (bar 9~15): 해골 등장, 박쥐 간헐적 ===
+      [16.20, 'skeleton', 0],
+      [18.05, 'bat', 3],
+      [19.89, 'skeleton', 4],
+      [22.66, 'gbat', 2],
+      [24.51, 'skeleton', 1],
       [26.35, 'item_fever', -1],
 
-      // === 중후반 (bar 14.5~20): 귀신 해골 ===
+      // === 중후반 (bar 15~21): 귀신해골 + 박쥐/강화박쥐 혼합 ===
       [27.28, 'pskeleton', 2],
-      [28.20, 'bat', 0],  [28.20, 'bat', 4],
-      [29.12, 'skeleton', 1], [29.12, 'skeleton', 3],
-      [30.05, 'gbat', 2],
-      [30.97, 'pskeleton', 0],
-      [31.89, 'bat', 1],  [31.89, 'bat', 3],
-      [32.82, 'pskeleton', 4],
-      [33.74, 'bat', 2],
-      [34.66, 'skeleton', 1],
-      [35.58, 'gbat', 0],  [35.58, 'gbat', 4],
-      [36.51, 'pskeleton', 2],
+      [29.12, 'bat', 0],
+      [30.97, 'skeleton', 4],
+      [32.82, 'gbat', 2],
+      [34.66, 'pskeleton', 1],
+      [36.51, 'bat', 3],
       [37.43, 'item_bomb', -1],
 
-      // === 후반 (bar 20.5~24): 혼합 ===
-      [38.35, 'bat', 0],  [38.35, 'bat', 2], [38.35, 'bat', 4],
-      [39.28, 'gbat', 1], [39.28, 'gbat', 3],
-      [40.20, 'skeleton', 2],
-      [41.12, 'pskeleton', 1], [41.12, 'pskeleton', 3],
-      [42.05, 'bat', 0],  [42.05, 'bat', 4],
-      [42.97, 'gbat', 2],
-      [43.89, 'skeleton', 0], [43.89, 'skeleton', 4],
-      [44.81, 'bat', 2],
+      // === 후반 (bar 21~25): 강화 혼합 ===
+      [38.35, 'bat', 0],   [38.35, 'skeleton', 4],
+      [40.20, 'pskeleton', 2],
+      [42.05, 'gbat', 1],
+      [43.89, 'bat', 3],
+      [44.81, 'pskeleton', 0],
 
       // === 보스 (bar 25) ===
       [46.66, 'boss', 2],
@@ -394,21 +371,31 @@ class GameScene extends Phaser.Scene {
 
   spawnEnemy(type, lane) {
     const x = this.laneXs[lane];
+    // 현재 박자 위상 계산 → 다음 비트까지 남은 시간으로 beatTimer 초기화
+    const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
+    const phase    = bElapsed % this.beatInterval;
+    const toNext   = this.beatInterval - phase;
+
     if (type === 'bat') {
-      this.enemies.push({ x, y: -20, vy: 215, type, lane,
-        hp: 1, maxHp: 1, alive: true, size: 14, shootTimer: 0 });
+      this.enemies.push({ x, y: -20, vy: 80, type, lane,
+        hp: 3, maxHp: 3, alive: true, size: 14, shootTimer: 0,
+        settled: false, settleY: 60 + Math.random()*80, exitTimer: 0,
+        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1), beatCount: 0 });
     } else if (type === 'gbat') {
-      this.enemies.push({ x, y: -25, vy: 140, type, lane,
-        hp: 2, maxHp: 2, alive: true, size: 21, shootTimer: 0 });
+      this.enemies.push({ x, y: -25, vy: 80, type, lane,
+        hp: 3, maxHp: 3, alive: true, size: 21, shootTimer: 0,
+        settled: false, settleY: 60 + Math.random()*100, exitTimer: 0,
+        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1), beatCount: 0 });
     } else if (type === 'skeleton') {
       this.enemies.push({ x, y: -28, vy: 68, type, lane,
         hp: 5, maxHp: 5, alive: true, size: 18, shootTimer: 0,
-        settled: false, settleY: 75 + Math.random()*120, exitTimer: 0 });
+        settled: false, settleY: 75 + Math.random()*120, exitTimer: 0,
+        beatTimer: toNext * 2, beatCount: 0 });
     } else if (type === 'pskeleton') {
       this.enemies.push({ x, y: -28, vy: 68, type, lane,
         hp: 5, maxHp: 5, alive: true, size: 18, shootTimer: 0,
         settled: false, settleY: 75 + Math.random()*120, exitTimer: 0,
-        laneDir: 1 });
+        beatTimer: toNext * 2, beatCount: 0, laneDir: 1 });
     }
   }
 
@@ -449,9 +436,51 @@ class GameScene extends Phaser.Scene {
       if (!e.alive) return;
       e.shootTimer += dt;
 
-      if (e.type === 'bat' || e.type === 'gbat') {
-        e.y += e.vy * dt;
-        if (e.y > H + 30) e.alive = false;
+      if (e.type === 'bat') {
+        if (!e.settled) {
+          e.y += e.vy * dt;
+          if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
+        } else {
+          e.exitTimer += dt;
+          e.beatTimer -= dt;
+          if (e.beatTimer <= 0) {
+            e.beatTimer += this.beatInterval;
+            e.beatCount++;
+            // 매 비트: 레인 이동
+            e.lane = Phaser.Math.Clamp(e.lane + e.beatLaneDir, 0, 4);
+            if (e.lane === 0 || e.lane === 4) e.beatLaneDir *= -1;
+            this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 100, ease: 'Cubic.Out' });
+            // 2비트마다: 아래로 사격
+            if (e.beatCount % 2 === 0) {
+              this.enemyBullets.push({ x: e.x, y: e.y + e.size,
+                vx: 0, vy: 200, dmg: 1, alive: true });
+            }
+          }
+          if (e.exitTimer >= 5) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
+        }
+
+      } else if (e.type === 'gbat') {
+        if (!e.settled) {
+          e.y += e.vy * dt;
+          if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
+        } else {
+          e.exitTimer += dt;
+          e.beatTimer -= dt;
+          if (e.beatTimer <= 0) {
+            e.beatTimer += this.beatInterval;
+            e.beatCount++;
+            // 매 비트: 사격
+            this.enemyBullets.push({ x: e.x, y: e.y + e.size,
+              vx: 0, vy: 200, dmg: 1, alive: true });
+            // 2비트마다: 레인 이동
+            if (e.beatCount % 2 === 0) {
+              e.lane = Phaser.Math.Clamp(e.lane + e.beatLaneDir, 0, 4);
+              if (e.lane === 0 || e.lane === 4) e.beatLaneDir *= -1;
+              this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 120, ease: 'Cubic.Out' });
+            }
+          }
+          if (e.exitTimer >= 6) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
+        }
 
       } else if (e.type === 'skeleton') {
         if (!e.settled) {
@@ -459,16 +488,15 @@ class GameScene extends Phaser.Scene {
           if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
         } else {
           e.exitTimer += dt;
-          if (e.shootTimer >= 1.8) {
-            e.shootTimer = 0;
+          e.beatTimer -= dt;
+          if (e.beatTimer <= 0) {
+            // 2비트마다 사격 (제자리 고정)
+            e.beatTimer += this.beatInterval * 2;
+            e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
               vx: 0, vy: 205, dmg: 1, alive: true });
           }
-          // 5초 후 위로 퇴장
-          if (e.exitTimer >= 5) {
-            e.y -= 90 * dt;
-            if (e.y < -40) e.alive = false;
-          }
+          if (e.exitTimer >= 5) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
         }
 
       } else if (e.type === 'pskeleton') {
@@ -477,19 +505,18 @@ class GameScene extends Phaser.Scene {
           if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
         } else {
           e.exitTimer += dt;
-          if (e.shootTimer >= 1.4) {
-            e.shootTimer = 0;
+          e.beatTimer -= dt;
+          if (e.beatTimer <= 0) {
+            // 2비트마다 사격 + 레인 이동
+            e.beatTimer += this.beatInterval * 2;
+            e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
               vx: 0, vy: 200, dmg: 1, alive: true });
-            // 발사 후 좌우 번갈아 레인 이동
             e.lane = Phaser.Math.Clamp(e.lane + e.laneDir, 0, 4);
             if (e.lane === 0 || e.lane === 4) e.laneDir *= -1;
             this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 170, ease: 'Cubic.Out' });
           }
-          if (e.exitTimer >= 5.5) {
-            e.y -= 90 * dt;
-            if (e.y < -40) e.alive = false;
-          }
+          if (e.exitTimer >= 5.5) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
         }
 
       } else if (e.type === 'boss') {
@@ -512,7 +539,7 @@ class GameScene extends Phaser.Scene {
         }
 
         if (e.pattern === 0) {
-          // 가로 패턴: 랜덤 레인 이동 후 4개 레인에 탄 발사 (1개 빈 레인)
+          // 가로 패턴: 랜덤 레인 이동 후 2레인 → 0.35s 후 2레인 시간차 발사
           if (e.patternTimer >= 2.4) {
             e.patternTimer = 0;
             const tl = ~~(Math.random() * 5);
@@ -521,10 +548,17 @@ class GameScene extends Phaser.Scene {
               onComplete: () => {
                 const lanes = [0,1,2,3,4].filter(l => l !== tl);
                 lanes.splice(~~(Math.random()*lanes.length), 1); // 빈 레인 1개
-                lanes.forEach(l => this.enemyBullets.push({
-                  x: this.laneXs[l], y: e.y + 40,
-                  vx: 0, vy: 190, dmg: 1, alive: true,
+                const first = lanes.slice(0, 2);
+                const second = lanes.slice(2);
+                first.forEach(l => this.enemyBullets.push({
+                  x: this.laneXs[l], y: e.y + 40, vx: 0, vy: 190, dmg: 1, alive: true,
                 }));
+                this.time.delayedCall(350, () => {
+                  if (!e.alive) return;
+                  second.forEach(l => this.enemyBullets.push({
+                    x: this.laneXs[l], y: e.y + 40, vx: 0, vy: 190, dmg: 1, alive: true,
+                  }));
+                });
               },
             });
           }
@@ -575,10 +609,18 @@ class GameScene extends Phaser.Scene {
           if (e.prisonPause <= 0 && e.prisonTimer >= 0.85) {
             e.prisonTimer = 0;
             const startL = e.moveDir > 0 ? 0 : 1;
-            for (let l = startL; l < startL + 4; l++) {
+            // 2발 먼저, 0.35s 후 나머지 2발
+            for (let l = startL; l < startL + 2; l++) {
               this.enemyBullets.push({ x: this.laneXs[l], y: e.y + 45,
                 vx: 0, vy: 165, dmg: 1, alive: true });
             }
+            this.time.delayedCall(350, () => {
+              if (!e.alive) return;
+              for (let l = startL + 2; l < startL + 4; l++) {
+                this.enemyBullets.push({ x: this.laneXs[l], y: e.y + 45,
+                  vx: 0, vy: 165, dmg: 1, alive: true });
+              }
+            });
           }
         }
 
