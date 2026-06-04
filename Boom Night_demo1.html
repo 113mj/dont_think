@@ -15,15 +15,17 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 const W = 480, H = 720;
 const LANE_XS = [52, 146, 240, 334, 428];
 
-const GAME_DATA = { levels: [] };
+const GAME_DATA = { levels: [], enemyDefs: {} };
 
 class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
   preload() {
     this.load.json('manifest', 'LevelData/levels.json');
+    this.load.json('enemyDefs', 'LevelData/enemies.json');
   }
   create() {
     const manifest = this.cache.json.get('manifest');
+    GAME_DATA.enemyDefs = this.cache.json.get('enemyDefs') || {};
     if (manifest) {
       this.scene.start('LevelPreloadScene', { manifest });
     } else {
@@ -203,7 +205,14 @@ class GameScene extends Phaser.Scene {
 
     this.levelData = level;
     this.config    = level.config;
-    this.stats     = level.enemyStats;
+    
+    // 전역 적 정의와 레벨별 오버라이드 병합
+    this.stats = JSON.parse(JSON.stringify(GAME_DATA.enemyDefs || {}));
+    if (level.enemyStats) {
+      for (let type in level.enemyStats) {
+        this.stats[type] = { ...this.stats[type], ...level.enemyStats[type] };
+      }
+    }
 
     this.songKey      = `bgm_${levelId}`;
     this.beatInterval = 60 / (this.config.bpm || 130);
@@ -535,11 +544,12 @@ class GameScene extends Phaser.Scene {
         if (e.y > H + 30) e.alive = false;
 
       } else if (e.type === 'gbat') {
-        // 강화 돌진형: 느리게 낙하하면서 2비트마다 레인 이동
+        // 강화 돌진형: 느리게 낙하하면서 N비트마다 레인 이동
+        const s = this.stats[e.type] || {};
         e.y += e.vy * dt;
         e.beatTimer -= dt;
         if (e.beatTimer <= 0) {
-          e.beatTimer += this.beatInterval * 2;
+          e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
           e.lane = Phaser.Math.Clamp(e.lane + e.beatLaneDir, 0, 4);
           if (e.lane === 0 || e.lane === 4) e.beatLaneDir *= -1;
           this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 120, ease: 'Cubic.Out' });
@@ -547,6 +557,7 @@ class GameScene extends Phaser.Scene {
         if (e.y > H + 30) e.alive = false;
 
       } else if (e.type === 'skeleton') {
+        const s = this.stats[e.type] || {};
         if (!e.settled) {
           e.y += e.vy * dt;
           if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
@@ -554,16 +565,16 @@ class GameScene extends Phaser.Scene {
           e.exitTimer += dt;
           e.beatTimer -= dt;
           if (e.beatTimer <= 0) {
-            // 2비트마다 사격 (제자리 고정)
-            e.beatTimer += this.beatInterval * 2;
+            e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
             e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
-              vx: 0, vy: 205 * (e.ds||1), dmg: 1, alive: true });
+              vx: 0, vy: (s.bulletSpeed || 205) * (e.ds||1), dmg: 1, alive: true });
           }
-          if (e.exitTimer >= 5) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
+          if (e.exitTimer >= (s.stayDuration || 5)) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
         }
 
       } else if (e.type === 'pskeleton') {
+        const s = this.stats[e.type] || {};
         if (!e.settled) {
           e.y += e.vy * dt;
           if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
@@ -571,16 +582,15 @@ class GameScene extends Phaser.Scene {
           e.exitTimer += dt;
           e.beatTimer -= dt;
           if (e.beatTimer <= 0) {
-            // 2비트마다 사격 + 레인 이동
-            e.beatTimer += this.beatInterval * 2;
+            e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
             e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
-              vx: 0, vy: 200 * (e.ds||1), dmg: 1, alive: true });
+              vx: 0, vy: (s.bulletSpeed || 200) * (e.ds||1), dmg: 1, alive: true });
             e.lane = Phaser.Math.Clamp(e.lane + e.laneDir, 0, 4);
             if (e.lane === 0 || e.lane === 4) e.laneDir *= -1;
             this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 170, ease: 'Cubic.Out' });
           }
-          if (e.exitTimer >= 5.5) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
+          if (e.exitTimer >= (s.stayDuration || 5.5)) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
         }
 
       } else if (e.type === 'boss') {

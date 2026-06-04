@@ -1,0 +1,33 @@
+{
+  "bat": {
+    "speed": 200,
+    "hp": 1,
+    "size": 14
+  },
+  "gbat": {
+    "speed": 130,
+    "hp": 3,
+    "size": 21,
+    "beatTimerMultiplier": 2
+  },
+  "skeleton": {
+    "speed": 68,
+    "hp": 5,
+    "size": 18,
+    "bulletSpeed": 205,
+    "beatTimerMultiplier": 2,
+    "stayDuration": 5.0
+  },
+  "pskeleton": {
+    "speed": 68,
+    "hp": 5,
+    "size": 18,
+    "bulletSpeed": 200,
+    "beatTimerMultiplier": 2,
+    "stayDuration": 5.5
+  },
+  "boss": {
+    "hp": 80,
+    "size": 48
+  }
+}

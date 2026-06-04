@@ -226,11 +226,30 @@
                 <option value="gbat">Giant Bat</option>
                 <option value="skeleton">Skeleton</option>
                 <option value="pskeleton">Possessed Skeleton</option>
+                <option value="boss">Boss</option>
             </select>
-            <label>Move Speed</label>
-            <input type="number" id="stat-speed">
-            <label>HP</label>
-            <input type="number" id="stat-hp">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                    <label>Move Speed</label>
+                    <input type="number" id="stat-speed">
+                </div>
+                <div>
+                    <label>HP</label>
+                    <input type="number" id="stat-hp">
+                </div>
+            </div>
+
+            <label>Bullet Speed (Skel)</label>
+            <input type="number" id="stat-bullet-speed">
+
+            <label>Beat Multiplier (2 = 2 beats)</label>
+            <input type="number" id="stat-beat-mult" step="0.5">
+
+            <label>Stay Duration (sec)</label>
+            <input type="number" id="stat-stay" step="0.1">
+
+            <button id="btn-reset-global" class="secondary" style="margin-top: 5px; font-size: 0.8rem; padding: 6px;">↺ Reset to Global Default</button>
         </div>
 
         <button id="btn-save">💾 Save level.json</button>
@@ -275,12 +294,19 @@
     const PX_PER_BEAT = 100; // Base spacing: 100px per Beat
     let zoom = 0.4;
     let levelData = null;
+    let globalEnemyDefs = {};
     let selectedType = 'bat';
 
     const timeline = document.getElementById('timeline');
     const container = document.getElementById('timeline-container');
     const player = document.getElementById('audio-player');
     const playbackLine = document.getElementById('playback-line');
+
+    // Load global enemy defs on start
+    fetch('LevelData/enemies.json')
+        .then(r => r.json())
+        .then(data => { globalEnemyDefs = data; })
+        .catch(e => console.error("Could not load global enemies.json", e));
 
     // UI Tools
     document.querySelectorAll('.tool').forEach(t => {
@@ -339,12 +365,26 @@
     document.getElementById('stat-type').onchange = updateStatPane;
     function updateStatPane() {
         const type = document.getElementById('stat-type').value;
-        const s = levelData.enemyStats[type];
-        if (s) {
-            document.getElementById('stat-speed').value = s.speed;
-            document.getElementById('stat-hp').value = s.hp;
-        }
+        // level.json 오버라이드 값이 없으면 빈 객체 사용
+        const s = (levelData && levelData.enemyStats && levelData.enemyStats[type]) ? levelData.enemyStats[type] : {};
+        // 전역 값 참조 (UI 안내용 혹은 리셋용)
+        const g = globalEnemyDefs[type] || {};
+        
+        document.getElementById('stat-speed').value        = s.speed !== undefined ? s.speed : (g.speed || 0);
+        document.getElementById('stat-hp').value           = s.hp !== undefined ? s.hp : (g.hp || 0);
+        document.getElementById('stat-bullet-speed').value = s.bulletSpeed !== undefined ? s.bulletSpeed : (g.bulletSpeed || 0);
+        document.getElementById('stat-beat-mult').value    = s.beatTimerMultiplier !== undefined ? s.beatTimerMultiplier : (g.beatTimerMultiplier || 0);
+        document.getElementById('stat-stay').value        = s.stayDuration !== undefined ? s.stayDuration : (g.stayDuration || 0);
     }
+
+    document.getElementById('btn-reset-global').onclick = () => {
+        const type = document.getElementById('stat-type').value;
+        if (levelData && levelData.enemyStats && levelData.enemyStats[type]) {
+            delete levelData.enemyStats[type];
+            updateStatPane();
+            alert(`${type} 설정을 전역 기본값으로 되돌렸습니다. (저장 시 반영)`);
+        }
+    };
 
     function renderTimeline() {
         timeline.querySelectorAll('.enemy-node, .beat-line, .lane-line, .beat-label').forEach(n => n.remove());
@@ -475,8 +515,13 @@
         levelData.config.difficulty = document.getElementById('cfg-diff').value;
 
         const type = document.getElementById('stat-type').value;
+        if (!levelData.enemyStats[type]) levelData.enemyStats[type] = {};
+        
         levelData.enemyStats[type].speed = parseInt(document.getElementById('stat-speed').value);
         levelData.enemyStats[type].hp = parseInt(document.getElementById('stat-hp').value);
+        levelData.enemyStats[type].bulletSpeed = parseInt(document.getElementById('stat-bullet-speed').value);
+        levelData.enemyStats[type].beatTimerMultiplier = parseFloat(document.getElementById('stat-beat-mult').value);
+        levelData.enemyStats[type].stayDuration = parseFloat(document.getElementById('stat-stay').value);
 
         const blob = new Blob([JSON.stringify(levelData, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
