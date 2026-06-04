@@ -1,0 +1,43 @@
+{
+  "config": {
+    "name": "Ghoulish Groove II",
+    "bpm": 130,
+    "offset": 0.51,
+    "diffScale": 1.35,
+    "difficulty": "★★★★★",
+    "bgmFile": "bgm.mp3"
+  },
+  "enemyStats": {
+    "bat": { "speed": 200, "hp": 1 },
+    "gbat": { "speed": 130, "hp": 3, "beatTimerMultiplier": 2 },
+    "skeleton": { "speed": 68, "hp": 5, "shootTimerMultiplier": 2 },
+    "pskeleton": { "speed": 68, "hp": 5, "shootTimerMultiplier": 2 },
+    "boss": { "hp": 80 }
+  },
+  "waves": [
+    { "time": 2.36, "type": "bat", "lane": 0 }, { "time": 2.36, "type": "bat", "lane": 4 },
+    { "time": 5.13, "type": "gbat", "lane": 2 },
+    { "time": 7.89, "type": "bat", "lane": 1 }, { "time": 7.89, "type": "bat", "lane": 3 },
+    { "time": 10.66, "type": "gbat", "lane": 0 },
+    { "time": 12.51, "type": "bat", "lane": 4 },
+    { "time": 14.36, "type": "item_bomb", "lane": 2 },
+    { "time": 16.20, "type": "skeleton", "lane": 1 },
+    { "time": 18.05, "type": "gbat", "lane": 2 },
+    { "time": 19.89, "type": "bat", "lane": 0 },
+    { "time": 23.59, "type": "gbat", "lane": 2 }, { "time": 23.59, "type": "bat", "lane": 4 },
+    { "time": 25.43, "type": "skeleton", "lane": 3 },
+    { "time": 26.35, "type": "item_fever", "lane": -1 },
+    { "time": 27.28, "type": "pskeleton", "lane": 0 },
+    { "time": 29.12, "type": "gbat", "lane": 3 },
+    { "time": 32.82, "type": "gbat", "lane": 2 },
+    { "time": 34.66, "type": "pskeleton", "lane": 4 },
+    { "time": 36.51, "type": "gbat", "lane": 0 }, { "time": 36.51, "type": "bat", "lane": 3 },
+    { "time": 37.43, "type": "item_bomb", "lane": -1 },
+    { "time": 38.35, "type": "skeleton", "lane": 3 },
+    { "time": 40.20, "type": "gbat", "lane": 2 },
+    { "time": 41.12, "type": "bat", "lane": 0 }, { "time": 41.12, "type": "bat", "lane": 4 },
+    { "time": 42.97, "type": "pskeleton", "lane": 2 },
+    { "time": 44.81, "type": "gbat", "lane": 1 }, { "time": 44.81, "type": "bat", "lane": 3 },
+    { "time": 46.66, "type": "boss", "lane": 2 }
+  ]
+}

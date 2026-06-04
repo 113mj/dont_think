@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Boom Night Level Editor</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --panel: #1e1e1e;
+            --text: #e0e0e0;
+            --accent: #ff8800;
+            --lane: #2a2a2a;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* Sidebar */
+        #sidebar {
+            width: 300px;
+            background: var(--panel);
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        h2 { margin-top: 0; color: var(--accent); font-size: 1.2rem; }
+        .section { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; margin-bottom: 5px; color: #aaa; }
+        input, select {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button:hover { opacity: 0.9; }
+        button.secondary { background: #444; }
+
+        /* Main Workspace */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        #toolbar {
+            height: 60px;
+            background: var(--panel);
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 15px;
+        }
+        .tool {
+            padding: 5px 12px;
+            background: #333;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            user-select: none;
+        }
+        .tool.active { background: var(--accent); color: white; }
+
+        /* Timeline */
+        #timeline-container {
+            flex: 1;
+            overflow-y: scroll;
+            background: #000;
+            position: relative;
+            cursor: crosshair;
+        }
+        #timeline {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px; /* 5 lanes * 80px */
+            background: #050505;
+            min-height: 100%;
+        }
+        .lane-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #222;
+        }
+        .beat-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #151515;
+        }
+        .beat-line.bar { background: #333; }
+        
+        .enemy-node {
+            position: absolute;
+            width: 60px;
+            height: 30px;
+            background: var(--accent);
+            border-radius: 4px;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: black;
+            box-shadow: 0 0 10px rgba(255,136,0,0.5);
+        }
+        .enemy-node.gbat { background: #cc44ff; color: white; }
+        .enemy-node.skeleton { background: #fff; color: black; }
+        .enemy-node.pskeleton { background: #44ffaa; color: black; }
+        .enemy-node.boss { background: #ff4400; color: white; width: 80px; height: 40px; }
+        .enemy-node.item { background: #ffff44; color: black; border-radius: 50%; width: 30px; }
+
+        /* Audio Controls */
+        #audio-controls {
+            height: 80px;
+            background: var(--panel);
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 20px;
+        }
+        #progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+        #progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 3px;
+            width: 0%;
+        }
+        #time-display { font-family: monospace; min-width: 120px; }
+
+        #playback-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: red;
+            z-index: 10;
+            box-shadow: 0 0 8px red;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>Level Config</h2>
+    <div class="section">
+        <button id="btn-open-folder">📁 Open Level Folder</button>
+        <p style="font-size: 0.7rem; color: #888;">Select a folder containing level.json and bgm.mp3</p>
+    </div>
+
+    <div id="edit-pane" style="display: none;">
+        <div class="section">
+            <label>Level Name</label>
+            <input type="text" id="cfg-name">
+            <label>BPM</label>
+            <input type="number" id="cfg-bpm" value="130">
+            <label>Offset (sec)</label>
+            <input type="number" id="cfg-offset" step="0.01" value="0.51">
+            <label>Difficulty</label>
+            <input type="text" id="cfg-diff" value="★★★">
+        </div>
+
+        <h2>Enemy Stats</h2>
+        <div class="section">
+            <label>Enemy Type</label>
+            <select id="stat-type">
+                <option value="bat">Bat (Normal)</option>
+                <option value="gbat">Giant Bat</option>
+                <option value="skeleton">Skeleton</option>
+                <option value="pskeleton">Possessed Skeleton</option>
+            </select>
+            <label>Move Speed</label>
+            <input type="number" id="stat-speed">
+            <label>HP</label>
+            <input type="number" id="stat-hp">
+        </div>
+
+        <button id="btn-save">💾 Save level.json</button>
+    </div>
+</div>
+
+<div id="main">
+    <div id="toolbar">
+        <div class="tool active" data-type="bat">Bat</div>
+        <div class="tool" data-type="gbat">G-Bat</div>
+        <div class="tool" data-type="skeleton">Skel</div>
+        <div class="tool" data-type="pskeleton">P-Skel</div>
+        <div class="tool" data-type="item_bomb">Bomb</div>
+        <div class="tool" data-type="item_fever">Fever</div>
+        <div class="tool" data-type="boss">BOSS</div>
+        <div style="flex:1"></div>
+        <span style="font-size: 0.8rem; color: #888;">L-Click: Place | R-Click: Delete</span>
+    </div>
+
+    <div id="timeline-container">
+        <div id="timeline">
+            <!-- Lines will be generated via JS -->
+            <div id="playback-line"></div>
+        </div>
+    </div>
+
+    <div id="audio-controls">
+        <button id="btn-play" style="width: 80px;">Play</button>
+        <div id="time-display">00:00 / 00:00</div>
+        <div id="progress-bar">
+            <div id="progress-fill"></div>
+        </div>
+        <div style="font-size: 0.8rem;">Zoom: </div>
+        <input type="range" id="zoom-range" min="20" max="200" value="100" style="width: 100px; margin:0;">
+    </div>
+</div>
+
+<audio id="audio-player"></audio>
+<!-- Hidden input for directory selection -->
+<input type="file" id="folder-input" webkitdirectory style="display: none;">
+
+<script>
+    const PX_PER_SEC = 100;
+    let zoom = 1.0;
+    let levelData = null;
+    let currentFolderHandle = null;
+    let selectedType = 'bat';
+
+    const timeline = document.getElementById('timeline');
+    const container = document.getElementById('timeline-container');
+    const player = document.getElementById('audio-player');
+    const playbackLine = document.getElementById('playback-line');
+
+    // UI Tools
+    document.querySelectorAll('.tool').forEach(t => {
+        t.onclick = () => {
+            document.querySelectorAll('.tool').forEach(x => x.classList.remove('active'));
+            t.classList.add('active');
+            selectedType = t.dataset.type;
+        };
+    });
+
+    // Folder Loading
+    document.getElementById('btn-open-folder').onclick = () => {
+        document.getElementById('folder-input').click();
+    };
+
+    document.getElementById('folder-input').onchange = async (e) => {
+        const files = e.target.files;
+        let jsonFile = null;
+        let audioFile = null;
+
+        for (const file of files) {
+            if (file.name === 'level.json') jsonFile = file;
+            if (file.name === 'bgm.mp3') audioFile = file;
+        }
+
+        if (jsonFile) {
+            const text = await jsonFile.text();
+            levelData = JSON.parse(text);
+            initEditor();
+        }
+        if (audioFile) {
+            player.src = URL.createObjectURL(audioFile);
+        }
+        
+        document.getElementById('edit-pane').style.display = 'block';
+    };
+
+    function initEditor() {
+        document.getElementById('cfg-name').value = levelData.config.name;
+        document.getElementById('cfg-bpm').value = levelData.config.bpm;
+        document.getElementById('cfg-offset').value = levelData.config.offset;
+        document.getElementById('cfg-diff').value = levelData.config.difficulty;
+
+        updateStatPane();
+        renderTimeline();
+    }
+
+    document.getElementById('stat-type').onchange = updateStatPane;
+    function updateStatPane() {
+        const type = document.getElementById('stat-type').value;
+        const s = levelData.enemyStats[type];
+        if (s) {
+            document.getElementById('stat-speed').value = s.speed;
+            document.getElementById('stat-hp').value = s.hp;
+        }
+    }
+
+    function renderTimeline() {
+        // Clear old stuff
+        const nodes = timeline.querySelectorAll('.enemy-node');
+        nodes.forEach(n => n.remove());
+        const gridLines = timeline.querySelectorAll('.beat-line, .lane-line');
+        gridLines.forEach(l => l.remove());
+
+        const duration = player.duration || 300; // default 5min if no audio
+        const totalHeight = duration * PX_PER_SEC * zoom;
+        timeline.style.height = totalHeight + 'px';
+
+        // Draw Lanes
+        for (let i = 0; i <= 5; i++) {
+            const l = document.createElement('div');
+            l.className = 'lane-line';
+            l.style.left = (i * 80) + 'px';
+            timeline.appendChild(l);
+        }
+
+        // Draw Beat Lines
+        const bpm = parseFloat(document.getElementById('cfg-bpm').value) || 120;
+        const offset = parseFloat(document.getElementById('cfg-offset').value) || 0;
+        const beatSec = 60 / bpm;
+        for (let t = offset; t < duration; t += beatSec) {
+            const line = document.createElement('div');
+            line.className = 'beat-line';
+            const isBar = Math.abs((t - offset) / beatSec % 4) < 0.01;
+            if (isBar) line.classList.add('bar');
+            line.style.top = (t * PX_PER_SEC * zoom) + 'px';
+            timeline.appendChild(line);
+        }
+
+        // Draw Enemies
+        levelData.waves.forEach((w, idx) => {
+            createNode(w, idx);
+        });
+    }
+
+    function createNode(w, idx) {
+        const node = document.createElement('div');
+        node.className = `enemy-node ${w.type.includes('item') ? 'item' : w.type}`;
+        node.innerText = w.type;
+        node.style.top = (w.time * PX_PER_SEC * zoom) + 'px';
+        const lane = w.lane < 0 ? 2 : w.lane;
+        node.style.left = (lane * 80 + 40) + 'px';
+        node.dataset.idx = idx;
+
+        node.oncontextmenu = (e) => {
+            e.preventDefault();
+            levelData.waves.splice(idx, 1);
+            renderTimeline();
+        };
+
+        timeline.appendChild(node);
+    }
+
+    // Timeline Click to place
+    timeline.onclick = (e) => {
+        if (e.target !== timeline) return;
+        const rect = timeline.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const x = e.clientX - rect.left;
+        
+        const time = y / (PX_PER_SEC * zoom);
+        const lane = Math.floor(x / 80);
+        
+        levelData.waves.push({
+            time: parseFloat(time.toFixed(3)),
+            type: selectedType,
+            lane: lane
+        });
+        levelData.waves.sort((a,b) => a.time - b.time);
+        renderTimeline();
+    };
+
+    // Playback
+    document.getElementById('btn-play').onclick = () => {
+        if (player.paused) {
+            player.play();
+            document.getElementById('btn-play').innerText = 'Pause';
+        } else {
+            player.pause();
+            document.getElementById('btn-play').innerText = 'Play';
+        }
+    };
+
+    player.ontimeupdate = () => {
+        const cur = player.currentTime;
+        const total = player.duration || 0;
+        document.getElementById('time-display').innerText = formatTime(cur) + ' / ' + formatTime(total);
+        document.getElementById('progress-fill').style.width = (cur / total * 100) + '%';
+        
+        const y = cur * PX_PER_SEC * zoom;
+        playbackLine.style.top = y + 'px';
+        
+        // Auto-scroll
+        if (!player.paused) {
+            const containerRect = container.getBoundingClientRect();
+            if (y > container.scrollTop + containerRect.height - 100 || y < container.scrollTop) {
+                container.scrollTop = y - 100;
+            }
+        }
+    };
+
+    function formatTime(s) {
+        const m = Math.floor(s / 60);
+        const sec = Math.floor(s % 60);
+        return m.toString().padStart(2,'0') + ':' + sec.toString().padStart(2,'0');
+    }
+
+    document.getElementById('zoom-range').oninput = (e) => {
+        zoom = e.target.value / 100;
+        renderTimeline();
+    };
+
+    // Save
+    document.getElementById('btn-save').onclick = () => {
+        // Sync config
+        levelData.config.name = document.getElementById('cfg-name').value;
+        levelData.config.bpm = parseFloat(document.getElementById('cfg-bpm').value);
+        levelData.config.offset = parseFloat(document.getElementById('cfg-offset').value);
+        levelData.config.difficulty = document.getElementById('cfg-diff').value;
+
+        // Sync current stat type
+        const type = document.getElementById('stat-type').value;
+        levelData.enemyStats[type].speed = parseInt(document.getElementById('stat-speed').value);
+        levelData.enemyStats[type].hp = parseInt(document.getElementById('stat-hp').value);
+
+        const blob = new Blob([JSON.stringify(levelData, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'level.json';
+        a.click();
+    };
+</script>
+
+</body>
+</html>

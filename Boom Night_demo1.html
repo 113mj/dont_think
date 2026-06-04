@@ -15,21 +15,53 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 const W = 480, H = 720;
 const LANE_XS = [52, 146, 240, 334, 428];
 
-const SONGS = [
-  { key: 'bgm1', file: 'Ghoulish_Groove_1.mp3', name: 'Ghoulish Groove I',
-    bpm: 130, offset: 0.51, difficulty: '★★★',   diffScale: 1.0,  available: true },
-  { key: 'bgm2', file: 'Ghoulish_Groove_2.mp3', name: 'Ghoulish Groove II',
-    bpm: 130, offset: 0.51, difficulty: '★★★★★', diffScale: 1.35, available: true },
-  { key: 'bgm3', file: 'Crimson_Arcade_3.mp3',  name: 'Crimson Arcade',
-    bpm: 130, offset: 0.51, difficulty: '★★★★',  diffScale: 1.18, available: true },
-];
+const GAME_DATA = { levels: [] };
 
 class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
   preload() {
-    SONGS.filter(s => s.available && s.file).forEach(s => this.load.audio(s.key, s.file));
+    this.load.json('manifest', 'LevelData/levels.json');
   }
-  create() { this.scene.start('TitleScene'); }
+  create() {
+    const manifest = this.cache.json.get('manifest');
+    if (manifest) {
+      this.scene.start('LevelPreloadScene', { manifest });
+    } else {
+      console.error('Failed to load level manifest');
+    }
+  }
+}
+
+class LevelPreloadScene extends Phaser.Scene {
+  constructor() { super('LevelPreloadScene'); }
+  init(data) { this.manifest = data.manifest; }
+  preload() {
+    this.manifest.forEach(id => {
+      this.load.json(`data_${id}`, `LevelData/${id}/level.json`);
+    });
+  }
+  create() {
+    this.manifest.forEach(id => {
+      const data = this.cache.json.get(`data_${id}`);
+      if (data) GAME_DATA.levels.push({ id, ...data });
+    });
+    this.scene.start('BgmPreloadScene');
+  }
+}
+
+class BgmPreloadScene extends Phaser.Scene {
+  constructor() { super('BgmPreloadScene'); }
+  preload() {
+    const txt = this.add.text(W/2, H/2, 'Loading Audio...', { fontSize: '18px', color: '#ff8800' }).setOrigin(0.5);
+    GAME_DATA.levels.forEach(lvl => {
+      if (lvl.config.bgmFile) {
+        this.load.audio(`bgm_${lvl.id}`, `LevelData/${lvl.id}/${lvl.config.bgmFile}`);
+      }
+    });
+  }
+  create() {
+    this.scene.start('TitleScene');
+  }
 }
 
 // ─── TitleScene ───────────────────────────────────────────────────────────────
@@ -121,52 +153,37 @@ class SongSelectScene extends Phaser.Scene {
 
     // 곡 카드
     const cardW = W - 60, cardH = 115;
-    SONGS.forEach((song, i) => {
+    GAME_DATA.levels.forEach((lvl, i) => {
+      const song = lvl.config;
       const cardX = W / 2, cardY = 175 + i * 140;
       const bg = this.add.graphics();
 
       const draw = (hover) => {
         bg.clear();
-        if (song.available) {
-          bg.fillStyle(hover ? 0x3a0022 : 0x1e000f, 1);
-          bg.lineStyle(2, hover ? 0xff6600 : 0x882200, 1);
-        } else {
-          bg.fillStyle(0x111118, 0.75);
-          bg.lineStyle(2, 0x333344, 1);
-        }
+        bg.fillStyle(hover ? 0x3a0022 : 0x1e000f, 1);
+        bg.lineStyle(2, hover ? 0xff6600 : 0x882200, 1);
         bg.fillRoundedRect(cardX - cardW/2, cardY - cardH/2, cardW, cardH, 14);
         bg.strokeRoundedRect(cardX - cardW/2, cardY - cardH/2, cardW, cardH, 14);
       };
       draw(false);
 
-      if (song.available) {
-        this.add.text(cardX, cardY - 24, song.name, {
-          fontSize: '22px', fontFamily: 'system-ui', color: '#ffeeaa', fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.add.text(cardX - 70, cardY + 16, `BPM ${song.bpm}`, {
-          fontSize: '13px', fontFamily: 'system-ui', color: '#ff8844'
-        }).setOrigin(0.5);
-        this.add.text(cardX + 70, cardY + 16, song.difficulty, {
-          fontSize: '14px', fontFamily: 'system-ui', color: '#ffcc44'
-        }).setOrigin(0.5);
+      this.add.text(cardX, cardY - 24, song.name, {
+        fontSize: '22px', fontFamily: 'system-ui', color: '#ffeeaa', fontStyle: 'bold'
+      }).setOrigin(0.5);
+      this.add.text(cardX - 70, cardY + 16, `BPM ${song.bpm}`, {
+        fontSize: '13px', fontFamily: 'system-ui', color: '#ff8844'
+      }).setOrigin(0.5);
+      this.add.text(cardX + 70, cardY + 16, song.difficulty, {
+        fontSize: '14px', fontFamily: 'system-ui', color: '#ffcc44'
+      }).setOrigin(0.5);
 
-        const zone = this.add.zone(cardX, cardY, cardW, cardH).setInteractive();
-        zone.on('pointerover',  () => draw(true));
-        zone.on('pointerout',   () => draw(false));
-        zone.on('pointerdown',  () => {
-          this.cameras.main.fade(400, 0,0,0);
-          this.time.delayedCall(400, () => this.scene.start('GameScene', {
-            songKey: song.key, bpm: song.bpm, offset: song.offset, diffScale: song.diffScale,
-          }));
-        });
-      } else {
-        this.add.text(cardX, cardY - 10, '🔒 준비 중', {
-          fontSize: '18px', fontFamily: 'system-ui', color: '#555566'
-        }).setOrigin(0.5);
-        this.add.text(cardX, cardY + 20, 'Coming Soon', {
-          fontSize: '12px', fontFamily: 'system-ui', color: '#444455'
-        }).setOrigin(0.5);
-      }
+      const zone = this.add.zone(cardX, cardY, cardW, cardH).setInteractive();
+      zone.on('pointerover',  () => draw(true));
+      zone.on('pointerout',   () => draw(false));
+      zone.on('pointerdown',  () => {
+        this.cameras.main.fade(400, 0,0,0);
+        this.time.delayedCall(400, () => this.scene.start('GameScene', { levelId: lvl.id }));
+      });
     });
   }
 }
@@ -176,11 +193,22 @@ class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
 
   create(data) {
-    const songData = data || {};
-    this.songKey      = songData.songKey  || 'bgm1';
-    this.beatInterval = 60 / (songData.bpm || 130);
-    this.beatOffset   = songData.offset   || 0.51;
-    this.diffScale    = songData.diffScale || 1.0;
+    const levelId = data.levelId || 'Level1';
+    const level = GAME_DATA.levels.find(l => l.id === levelId);
+    if (!level) {
+      console.error('Level not found:', levelId);
+      this.scene.start('TitleScene');
+      return;
+    }
+
+    this.levelData = level;
+    this.config    = level.config;
+    this.stats     = level.enemyStats;
+
+    this.songKey      = `bgm_${levelId}`;
+    this.beatInterval = 60 / (this.config.bpm || 130);
+    this.beatOffset   = this.config.offset   || 0.51;
+    this.diffScale    = this.config.diffScale || 1.0;
 
     this.gs = {
       lives: 3, score: 0, bombs: 2,
@@ -204,8 +232,8 @@ class GameScene extends Phaser.Scene {
     this.player = { x: LANE_XS[2], y: H - 100, vy: 0, w: 20, h: 26, lane: 2 };
     this._playerVisible = true;
 
-    const builders = { bgm1: () => this.buildStage1(), bgm2: () => this.buildStage2(), bgm3: () => this.buildStage3() };
-    this.waveQueue = (builders[this.songKey] || builders.bgm1)();
+    // JSON 웨이브 데이터를 큐로 변환
+    this.waveQueue = level.waves.map(w => [w.time, w.type, w.lane]);
     this.waveIdx   = 0;
 
     this.bgGfx       = this.add.graphics().setDepth(0);
@@ -224,7 +252,7 @@ class GameScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(500);
 
-    // 배경 음악 (로딩 실패 시 게임은 계속 진행)
+    // 배경 음악
     this.bgm = null;
     if (this.cache.audio.exists(this.songKey)) {
       this.sound.stopAll();
@@ -233,125 +261,7 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-  // 스테이지 1 웨이브 데이터 — BPM 130 박자 정렬
-  // beat=0.462s, bar(4beat)=1.846s, 시작 offset=0.51s
-  // 형식: [시간(초), '타입', 레인(0~4, -1=랜덤)]
-  // 타입: 'bat', 'gbat', 'skeleton', 'pskeleton', 'item_bomb', 'item_fever', 'boss'
-  buildStage1() {
-    return [
-      // === 도입부 (bar 1~8): 박쥐 1~2마리씩, 간격 넓게 ===
-      [2.36,  'bat', 2],
-      [5.13,  'bat', 0],
-      [7.89,  'bat', 4],
-      [10.66, 'gbat', 2],
-      [13.43, 'bat', 1],
-      [15.28, 'item_bomb', 2],
 
-      // === 중반 (bar 9~15): 해골 등장 (빈도 줄임) ===
-      [16.20, 'skeleton', 0],
-      [18.05, 'bat', 3],
-      [22.66, 'gbat', 2],
-      [24.51, 'bat', 4],
-      [26.35, 'item_fever', -1],
-
-      // === 중후반 (bar 15~21): 귀신해골 + 박쥐/강화박쥐 혼합 ===
-      [27.28, 'pskeleton', 2],
-      [29.12, 'bat', 0],
-      [32.82, 'gbat', 2],
-      [34.66, 'skeleton', 1],
-      [36.51, 'bat', 3],
-      [37.43, 'item_bomb', -1],
-
-      // === 후반 (bar 21~25): 강화 혼합 ===
-      [38.35, 'bat', 0],
-      [40.20, 'pskeleton', 2],
-      [42.05, 'gbat', 1],
-      [43.89, 'bat', 3],
-      [44.81, 'skeleton', 4],
-
-      // === 보스 (bar 25) ===
-      [46.66, 'boss', 2],
-    ];
-  }
-
-  // Ghoulish Groove II — 박쥐+강화박쥐 중심, Groove I보다 약간 어렵게
-  buildStage2() {
-    return [
-      // === 도입부: 박쥐 쌍 등장 ===
-      [2.36,  'bat', 0],   [2.36,  'bat', 4],
-      [5.13,  'gbat', 2],
-      [7.89,  'bat', 1],   [7.89,  'bat', 3],
-      [10.66, 'gbat', 0],
-      [12.51, 'bat', 4],
-      [14.36, 'item_bomb', 2],
-
-      // === 중반: 해골 등장 (빈도 줄임) ===
-      [16.20, 'skeleton', 1],
-      [18.05, 'gbat', 2],
-      [19.89, 'bat', 0],
-      [23.59, 'gbat', 2],      [23.59, 'bat', 4],
-      [25.43, 'skeleton', 3],
-      [26.35, 'item_fever', -1],
-
-      // === 중후반: 귀신해골 + 강화박쥐 ===
-      [27.28, 'pskeleton', 0],
-      [29.12, 'gbat', 3],
-      [32.82, 'gbat', 2],
-      [34.66, 'pskeleton', 4],
-      [36.51, 'gbat', 0],  [36.51, 'bat', 3],
-      [37.43, 'item_bomb', -1],
-
-      // === 후반: 혼합 공세 ===
-      [38.35, 'skeleton', 3],
-      [40.20, 'gbat', 2],
-      [41.12, 'bat', 0],        [41.12, 'bat', 4],
-      [42.97, 'pskeleton', 2],
-      [44.81, 'gbat', 1],       [44.81, 'bat', 3],
-
-      // === 보스 ===
-      [46.66, 'boss', 2],
-    ];
-  }
-
-  // Crimson Arcade — 어둡고 고딕, 강화박쥐·귀신해골 위주, 초반부터 압박
-  buildStage3() {
-    return [
-      // === 도입부: 강화박쥐로 시작 (무거운 느낌) ===
-      [2.36,  'gbat', 2],
-      [4.20,  'gbat', 0],  [4.20,  'bat', 4],
-      [6.97,  'gbat', 3],
-      [9.74,  'bat', 1],   [9.74,  'bat', 3],
-      [12.51, 'gbat', 2],
-      [14.36, 'item_bomb', 0],
-
-      // === 중반: 귀신해골 이른 등장 (빈도 줄임) ===
-      [15.28, 'pskeleton', 2],
-      [17.12, 'skeleton', 0],
-      [18.97, 'gbat', 2],
-      [22.66, 'skeleton', 3],
-      [24.51, 'gbat', 0],  [24.51, 'bat', 4],
-      [26.35, 'item_fever', -1],
-
-      // === 중후반: 귀신해골+강화박쥐 압박 ===
-      [27.28, 'pskeleton', 0],
-      [29.12, 'gbat', 2],
-      [30.97, 'pskeleton', 3],
-      [32.82, 'gbat', 4],
-      [34.66, 'skeleton', 1],
-      [36.51, 'bat', 0],        [36.51, 'bat', 4],
-      [37.43, 'item_bomb', -1],
-
-      // === 후반: 귀신해골 러시 (쌍 → 단독으로) ===
-      [38.35, 'pskeleton', 1],
-      [40.20, 'gbat', 2],
-      [41.12, 'skeleton', 0],   [41.12, 'bat', 4],
-      [42.97, 'pskeleton', 3],
-      [44.81, 'gbat', 1],       [44.81, 'bat', 3],
-
-      // === 보스 ===
-      [46.66, 'boss', 2],
-    ];
-  }
 
   buildHUD() {
     this.add.rectangle(0, 0, W, 42, 0x000000, 0.72).setOrigin(0).setDepth(10);
@@ -551,29 +461,27 @@ class GameScene extends Phaser.Scene {
 
   spawnEnemy(type, lane) {
     const x = this.laneXs[lane];
-    // 현재 박자 위상 계산 → 다음 비트까지 남은 시간으로 beatTimer 초기화
     const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
     const phase    = bElapsed % this.beatInterval;
     const toNext   = this.beatInterval - phase;
+    const ds       = this.diffScale;
+    const s        = this.stats[type] || { speed: 100, hp: 1 };
 
-    const ds = this.diffScale;
     if (type === 'bat') {
-      this.enemies.push({ x, y: -20, vy: 200 * ds, type, lane,
-        hp: 1, maxHp: 1, alive: true, size: 14, shootTimer: 0 });
+      this.enemies.push({ x, y: -20, vy: s.speed * ds, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 14, shootTimer: 0 });
     } else if (type === 'gbat') {
-      this.enemies.push({ x, y: -25, vy: 130 * ds, type, lane,
-        hp: 3, maxHp: 3, alive: true, size: 21, shootTimer: 0,
-        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1) });
-    } else if (type === 'skeleton') {
-      this.enemies.push({ x, y: -28, vy: 68 * ds, type, lane,
-        hp: 5, maxHp: 5, alive: true, size: 18, shootTimer: 0,
+      const btm = s.beatTimerMultiplier || 2;
+      this.enemies.push({ x, y: -25, vy: s.speed * ds, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 21, shootTimer: 0,
+        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1), btm });
+    } else if (type === 'skeleton' || type === 'pskeleton') {
+      const isPoss = type === 'pskeleton';
+      const btm = s.beatTimerMultiplier || 2;
+      this.enemies.push({ x, y: -28, vy: s.speed * ds, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 18, shootTimer: 0,
         settled: false, settleY: 75 + Math.random()*120, exitTimer: 0,
-        beatTimer: toNext * 2, beatCount: 0, ds });
-    } else if (type === 'pskeleton') {
-      this.enemies.push({ x, y: -28, vy: 68 * ds, type, lane,
-        hp: 5, maxHp: 5, alive: true, size: 18, shootTimer: 0,
-        settled: false, settleY: 75 + Math.random()*120, exitTimer: 0,
-        beatTimer: toNext * 2, beatCount: 0, laneDir: 1, ds });
+        beatTimer: toNext * btm, beatCount: 0, ds, laneDir: isPoss ? 1 : 0, btm });
     }
   }
 
