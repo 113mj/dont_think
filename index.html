@@ -435,15 +435,8 @@ class GameScene extends Phaser.Scene {
       e.shootTimer += dt;
 
       if (e.type === 'bat') {
-        // 돌진형: 아래로 낙하하면서 비트마다 레인 이동
+        // 돌진형: 직선 낙하
         e.y += e.vy * dt;
-        e.beatTimer -= dt;
-        if (e.beatTimer <= 0) {
-          e.beatTimer += this.beatInterval;
-          e.lane = Phaser.Math.Clamp(e.lane + e.beatLaneDir, 0, 4);
-          if (e.lane === 0 || e.lane === 4) e.beatLaneDir *= -1;
-          this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 90, ease: 'Cubic.Out' });
-        }
         if (e.y > H + 30) e.alive = false;
 
       } else if (e.type === 'gbat') {
