@@ -246,8 +246,9 @@
         <div class="tool" data-type="item_bomb">Bomb</div>
         <div class="tool" data-type="item_fever">Fever</div>
         <div class="tool" data-type="boss">BOSS</div>
+        <div class="tool" data-type="eraser" style="background: #662222; border: 1px solid #ff4444;">Eraser</div>
         <div style="flex:1"></div>
-        <span style="font-size: 0.8rem; color: #888;">L-Click: Place | R-Click: Delete</span>
+        <span style="font-size: 0.8rem; color: #888;">L-Click: Place / Erase</span>
     </div>
 
     <div id="timeline-container">
@@ -394,6 +395,14 @@
         node.style.left = (lane * 80 + 40) + 'px';
         node.title = `Beat: ${w.beat}`;
 
+        node.onclick = (e) => {
+            if (selectedType === 'eraser') {
+                e.stopPropagation();
+                levelData.waves.splice(idx, 1);
+                renderTimeline();
+            }
+        };
+
         node.oncontextmenu = (e) => {
             e.preventDefault();
             levelData.waves.splice(idx, 1);
@@ -404,6 +413,8 @@
 
     timeline.onclick = (e) => {
         if (e.target !== timeline) return;
+        if (selectedType === 'eraser') return;
+        
         const rect = timeline.getBoundingClientRect();
         const y = e.clientY - rect.top;
         const x = e.clientX - rect.left;
