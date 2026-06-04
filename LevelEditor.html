@@ -220,6 +220,12 @@
 
         <h2>Enemy Stats</h2>
         <div class="section">
+            <div class="checkbox-group">
+                <input type="checkbox" id="use-custom-stats">
+                <label for="use-custom-stats" style="margin:0; font-weight: bold; color: var(--accent);">Override Global Stats</label>
+            </div>
+            <p id="global-ref-msg" style="font-size: 0.7rem; color: #888; margin-top: -5px; margin-bottom: 10px;">(Off: Uses enemies.json defaults)</p>
+
             <label>Enemy Type</label>
             <select id="stat-type">
                 <option value="bat">Bat (Normal)</option>
@@ -248,8 +254,6 @@
 
             <label>Stay Duration (beats)</label>
             <input type="number" id="stat-stay" step="0.5">
-
-            <button id="btn-reset-global" class="secondary" style="margin-top: 5px; font-size: 0.8rem; padding: 6px;">↺ Reset ALL to Global Default</button>
         </div>
 
         <button id="btn-save">💾 Save level.json</button>
@@ -301,10 +305,10 @@
 <input type="file" id="global-file-input" accept=".json" style="display: none;">
 
 <script>
-    const PX_PER_BEAT = 100; // Base spacing: 100px per Beat
+    const PX_PER_BEAT = 100;
     let zoom = 0.4;
     let levelData = null;
-    let globalEnemyDefs = {};
+    let globalEnemyDefs = null; 
     let selectedType = 'bat';
 
     const timeline = document.getElementById('timeline');
@@ -318,8 +322,6 @@
             document.querySelectorAll('.tool').forEach(x => x.classList.remove('active'));
             t.classList.add('active');
             selectedType = t.dataset.type;
-            
-            // Show/hide target lane selector
             const needsTarget = (selectedType === 'gbat' || selectedType === 'pskeleton');
             document.getElementById('lane-select-container').style.display = needsTarget ? 'flex' : 'none';
         };
@@ -327,45 +329,69 @@
 
     document.getElementById('btn-open-folder').onclick = () => document.getElementById('folder-input').click();
 
-    // 전역 파일 선택 처리
-    document.getElementById('btn-reset-global').onclick = () => {
-        document.getElementById('global-file-input').click();
+    // Global Stats Selection (Reference)
+    const loadGlobalRef = () => {
+        if (!globalEnemyDefs) {
+            alert("전역 기준값(enemies.json)을 선택해주세요.");
+            document.getElementById('global-file-input').click();
+        }
     };
 
     document.getElementById('global-file-input').onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        
         try {
             const text = await file.text();
             globalEnemyDefs = JSON.parse(text);
-            
-            if (levelData) {
-                // 이 레벨의 모든 적 오버라이드 삭제
-                levelData.enemyStats = {};
-                updateStatPane();
-                alert(`모든 적 설정을 선택한 파일의 전역 기본값으로 되돌렸습니다. (저장 시 반영)`);
-            }
+            document.getElementById('global-ref-msg').innerText = "✓ Global stats loaded";
+            updateStatPane();
         } catch (err) {
-            alert("파일을 읽는 중 오류가 발생했습니다: " + err.message);
+            alert("Error loading global file: " + err.message);
         }
     };
+
+    document.getElementById('use-custom-stats').onchange = () => {
+        if (document.getElementById('use-custom-stats').checked) {
+            loadGlobalRef();
+        }
+        updateStatPane();
+    };
+
+    document.getElementById('stat-type').onchange = updateStatPane;
+
+    function updateStatPane() {
+        const isCustom = document.getElementById('use-custom-stats').checked;
+        const inputs = ['stat-speed', 'stat-hp', 'stat-bullet-speed', 'stat-beat-mult', 'stat-stay'];
+        inputs.forEach(id => document.getElementById(id).disabled = !isCustom);
+
+        if (!globalEnemyDefs) {
+            inputs.forEach(id => document.getElementById(id).value = 0);
+            return;
+        }
+
+        const type = document.getElementById('stat-type').value;
+        const g = globalEnemyDefs[type] || {};
+        // Use custom data if in custom mode, otherwise show global values
+        const s = (isCustom && levelData && levelData.enemyStats && levelData.enemyStats[type]) ? levelData.enemyStats[type] : g;
+        
+        document.getElementById('stat-speed').value        = s.speed !== undefined ? s.speed : (g.speed || 0);
+        document.getElementById('stat-hp').value           = s.hp !== undefined ? s.hp : (g.hp || 0);
+        document.getElementById('stat-bullet-speed').value = s.bulletSpeed !== undefined ? s.bulletSpeed : (g.bulletSpeed || 0);
+        document.getElementById('stat-beat-mult').value    = s.beatTimerMultiplier !== undefined ? s.beatTimerMultiplier : (g.beatTimerMultiplier || 0);
+        document.getElementById('stat-stay').value        = s.stayDuration !== undefined ? s.stayDuration : (g.stayDuration || 0);
+    }
 
     document.getElementById('folder-input').onchange = async (e) => {
         const files = e.target.files;
         let jsonFile = null;
         let audioFile = null;
-
         for (const file of files) {
             if (file.name === 'level.json') jsonFile = file;
             if (file.name === 'bgm.mp3') audioFile = file;
         }
-
         if (jsonFile) {
             const text = await jsonFile.text();
             levelData = JSON.parse(text);
-            
-            // Migration: Convert time to beat if necessary
             if (levelData.waves.length > 0 && levelData.waves[0].time !== undefined) {
                 const bpm = levelData.config.bpm || 130;
                 const offset = levelData.config.offset || 0;
@@ -376,9 +402,7 @@
             }
             initEditor();
         }
-        if (audioFile) {
-            player.src = URL.createObjectURL(audioFile);
-        }
+        if (audioFile) player.src = URL.createObjectURL(audioFile);
         document.getElementById('edit-pane').style.display = 'block';
     };
 
@@ -387,59 +411,64 @@
         document.getElementById('cfg-bpm').value = levelData.config.bpm;
         document.getElementById('cfg-offset').value = levelData.config.offset;
         document.getElementById('cfg-diff').value = levelData.config.difficulty;
+        
+        // Detect if level has custom stats
+        const hasCustom = !!(levelData.enemyStats && Object.keys(levelData.enemyStats).length > 0);
+        document.getElementById('use-custom-stats').checked = hasCustom;
+
         updateStatPane();
         renderTimeline();
     }
 
-    document.getElementById('cfg-bpm').onchange = renderTimeline;
-    document.getElementById('cfg-offset').onchange = renderTimeline;
+    document.getElementById('btn-save').onclick = () => {
+        levelData.config.name = document.getElementById('cfg-name').value;
+        levelData.config.bpm = parseFloat(document.getElementById('cfg-bpm').value);
+        levelData.config.offset = parseFloat(document.getElementById('cfg-offset').value);
+        levelData.config.difficulty = document.getElementById('cfg-diff').value;
 
-    document.getElementById('stat-type').onchange = updateStatPane;
-    function updateStatPane() {
-        const type = document.getElementById('stat-type').value;
-        // level.json 오버라이드 값이 없으면 빈 객체 사용
-        const s = (levelData && levelData.enemyStats && levelData.enemyStats[type]) ? levelData.enemyStats[type] : {};
-        // 전역 값 참조 (UI 안내용 혹은 리셋용)
-        const g = globalEnemyDefs[type] || {};
-        
-        document.getElementById('stat-speed').value        = s.speed !== undefined ? s.speed : (g.speed || 0);
-        document.getElementById('stat-hp').value           = s.hp !== undefined ? s.hp : (g.hp || 0);
-        document.getElementById('stat-bullet-speed').value = s.bulletSpeed !== undefined ? s.bulletSpeed : (g.bulletSpeed || 0);
-        document.getElementById('stat-beat-mult').value    = s.beatTimerMultiplier !== undefined ? s.beatTimerMultiplier : (g.beatTimerMultiplier || 0);
-        document.getElementById('stat-stay').value        = s.stayDuration !== undefined ? s.stayDuration : (g.stayDuration || 0);
-    }
+        const isCustom = document.getElementById('use-custom-stats').checked;
+        if (isCustom) {
+            const type = document.getElementById('stat-type').value;
+            if (!levelData.enemyStats) levelData.enemyStats = {};
+            if (!levelData.enemyStats[type]) levelData.enemyStats[type] = {};
+            
+            levelData.enemyStats[type].speed = parseInt(document.getElementById('stat-speed').value);
+            levelData.enemyStats[type].hp = parseInt(document.getElementById('stat-hp').value);
+            levelData.enemyStats[type].bulletSpeed = parseInt(document.getElementById('stat-bullet-speed').value);
+            levelData.enemyStats[type].beatTimerMultiplier = parseFloat(document.getElementById('stat-beat-mult').value);
+            levelData.enemyStats[type].stayDuration = parseFloat(document.getElementById('stat-stay').value);
+        } else {
+            delete levelData.enemyStats;
+        }
 
-    document.getElementById('btn-reset-global').onclick = () => {
-        document.getElementById('global-file-input').click();
+        const blob = new Blob([JSON.stringify(levelData, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'level.json';
+        a.click();
     };
 
     function renderTimeline() {
         timeline.querySelectorAll('.enemy-node, .beat-line, .lane-line, .beat-label').forEach(n => n.remove());
-
         const bpm = parseFloat(document.getElementById('cfg-bpm').value) || 120;
         const duration = player.duration || 300;
         const totalBeats = (duration * bpm) / 60;
-        
-        const totalHeight = totalBeats * PX_PER_BEAT * zoom;
-        timeline.style.height = totalHeight + 'px';
+        timeline.style.height = (totalBeats * PX_PER_BEAT * zoom) + 'px';
 
-        // Draw Lanes
         for (let i = 0; i <= 5; i++) {
             const l = document.createElement('div');
             l.className = 'lane-line';
             l.style.left = (i * 80) + 'px';
             timeline.appendChild(l);
         }
-
-        // Draw Beats
         for (let b = 0; b < totalBeats; b += 0.25) {
-            if (b % 1 !== 0 && b % 0.5 !== 0) continue; // Only draw up to 1/2 beat for grid
+            if (b % 1 !== 0 && b % 0.5 !== 0) continue;
             const line = document.createElement('div');
             line.className = 'beat-line';
             if (b % 4 === 0) line.classList.add('bar');
             line.style.top = (b * PX_PER_BEAT * zoom) + 'px';
             timeline.appendChild(line);
-
             if (b % 1 === 0) {
                 const label = document.createElement('div');
                 label.className = 'beat-label';
@@ -448,8 +477,6 @@
                 timeline.appendChild(label);
             }
         }
-
-        // Draw Enemies
         levelData.waves.forEach((w, idx) => createNode(w, idx));
     }
 
@@ -462,7 +489,6 @@
         node.style.left = (lane * 80 + 40) + 'px';
         node.title = `Beat: ${w.beat}${w.targetLane !== undefined ? ' -> Lane ' + (w.targetLane+1) : ''}`;
 
-        // Ping-pong path visualization
         if (w.targetLane !== undefined && w.targetLane !== w.lane) {
             const path = document.createElement('div');
             path.style.position = 'absolute';
@@ -476,7 +502,6 @@
             path.style.pointerEvents = 'none';
             timeline.appendChild(path);
         }
-
         node.onclick = (e) => {
             if (selectedType === 'eraser') {
                 e.stopPropagation();
@@ -484,7 +509,6 @@
                 renderTimeline();
             }
         };
-
         node.oncontextmenu = (e) => {
             e.preventDefault();
             levelData.waves.splice(idx, 1);
@@ -496,32 +520,21 @@
     timeline.onclick = (e) => {
         if (e.target !== timeline) return;
         if (selectedType === 'eraser') return;
-        
         const rect = timeline.getBoundingClientRect();
         const y = e.clientY - rect.top;
         const x = e.clientX - rect.left;
-        
         let beat = y / (PX_PER_BEAT * zoom);
         if (document.getElementById('snap-enabled').checked) {
             const div = parseInt(document.getElementById('snap-division').value);
             beat = Math.round(beat * div) / div;
         }
-
         const lane = Math.floor(x / 80);
         const newData = { beat: parseFloat(beat.toFixed(3)), type: selectedType, lane: lane };
-        
-        // Add adjacent target lane for moving types
         if (selectedType === 'gbat' || selectedType === 'pskeleton') {
             const dir = document.getElementById('move-dir-select').value;
-            let targetL;
-            if (dir === 'left') {
-                targetL = (lane === 0) ? 1 : lane - 1;
-            } else {
-                targetL = (lane === 4) ? 3 : lane + 1;
-            }
+            let targetL = (dir === 'left') ? ((lane === 0) ? 1 : lane - 1) : ((lane === 4) ? 3 : lane + 1);
             newData.targetLane = targetL;
         }
-        
         levelData.waves.push(newData);
         levelData.waves.sort((a,b) => a.beat - b.beat);
         renderTimeline();
@@ -537,14 +550,11 @@
         const total = player.duration || 1;
         document.getElementById('time-display').innerText = formatTime(cur) + ' / ' + formatTime(total);
         document.getElementById('progress-fill').style.width = (cur / total * 100) + '%';
-        
         const bpm = parseFloat(document.getElementById('cfg-bpm').value) || 120;
         const offset = parseFloat(document.getElementById('cfg-offset').value) || 0;
         const currentBeat = (cur - offset) * (bpm / 60);
-        
         const y = currentBeat * PX_PER_BEAT * zoom;
         playbackLine.style.top = y + 'px';
-        
         if (!player.paused) {
             const containerRect = container.getBoundingClientRect();
             if (y > container.scrollTop + containerRect.height - 150 || y < container.scrollTop) {
@@ -562,29 +572,6 @@
     document.getElementById('zoom-range').oninput = (e) => {
         zoom = e.target.value / 100;
         renderTimeline();
-    };
-
-    document.getElementById('btn-save').onclick = () => {
-        levelData.config.name = document.getElementById('cfg-name').value;
-        levelData.config.bpm = parseFloat(document.getElementById('cfg-bpm').value);
-        levelData.config.offset = parseFloat(document.getElementById('cfg-offset').value);
-        levelData.config.difficulty = document.getElementById('cfg-diff').value;
-
-        const type = document.getElementById('stat-type').value;
-        if (!levelData.enemyStats[type]) levelData.enemyStats[type] = {};
-        
-        levelData.enemyStats[type].speed = parseInt(document.getElementById('stat-speed').value);
-        levelData.enemyStats[type].hp = parseInt(document.getElementById('stat-hp').value);
-        levelData.enemyStats[type].bulletSpeed = parseInt(document.getElementById('stat-bullet-speed').value);
-        levelData.enemyStats[type].beatTimerMultiplier = parseFloat(document.getElementById('stat-beat-mult').value);
-        levelData.enemyStats[type].stayDuration = parseFloat(document.getElementById('stat-stay').value);
-
-        const blob = new Blob([JSON.stringify(levelData, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'level.json';
-        a.click();
     };
 </script>
 </body>
