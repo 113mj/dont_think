@@ -266,6 +266,15 @@
         <div class="tool" data-type="item_fever">Fever</div>
         <div class="tool" data-type="boss">BOSS</div>
         <div class="tool" data-type="eraser" style="background: #662222; border: 1px solid #ff4444;">Eraser</div>
+        
+        <div id="lane-select-container" style="margin-left: 20px; display: none; align-items: center; gap: 8px;">
+            <span style="font-size: 0.8rem; color: #aaa;">Move Direction:</span>
+            <select id="move-dir-select" style="width: 80px; margin: 0;">
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+            </select>
+        </div>
+
         <div style="flex:1"></div>
         <span style="font-size: 0.8rem; color: #888;">L-Click: Place / Erase</span>
     </div>
@@ -309,6 +318,10 @@
             document.querySelectorAll('.tool').forEach(x => x.classList.remove('active'));
             t.classList.add('active');
             selectedType = t.dataset.type;
+            
+            // Show/hide target lane selector
+            const needsTarget = (selectedType === 'gbat' || selectedType === 'pskeleton');
+            document.getElementById('lane-select-container').style.display = needsTarget ? 'flex' : 'none';
         };
     });
 
@@ -447,7 +460,22 @@
         node.style.top = (w.beat * PX_PER_BEAT * zoom) + 'px';
         const lane = w.lane < 0 ? 2 : w.lane;
         node.style.left = (lane * 80 + 40) + 'px';
-        node.title = `Beat: ${w.beat}`;
+        node.title = `Beat: ${w.beat}${w.targetLane !== undefined ? ' -> Lane ' + (w.targetLane+1) : ''}`;
+
+        // Ping-pong path visualization
+        if (w.targetLane !== undefined && w.targetLane !== w.lane) {
+            const path = document.createElement('div');
+            path.style.position = 'absolute';
+            path.style.height = '2px';
+            path.style.background = 'rgba(255,255,255,0.2)';
+            path.style.top = (w.beat * PX_PER_BEAT * zoom) + 'px';
+            const x1 = lane * 80 + 40;
+            const x2 = w.targetLane * 80 + 40;
+            path.style.left = Math.min(x1, x2) + 'px';
+            path.style.width = Math.abs(x1 - x2) + 'px';
+            path.style.pointerEvents = 'none';
+            timeline.appendChild(path);
+        }
 
         node.onclick = (e) => {
             if (selectedType === 'eraser') {
@@ -480,7 +508,21 @@
         }
 
         const lane = Math.floor(x / 80);
-        levelData.waves.push({ beat: parseFloat(beat.toFixed(3)), type: selectedType, lane: lane });
+        const newData = { beat: parseFloat(beat.toFixed(3)), type: selectedType, lane: lane };
+        
+        // Add adjacent target lane for moving types
+        if (selectedType === 'gbat' || selectedType === 'pskeleton') {
+            const dir = document.getElementById('move-dir-select').value;
+            let targetL;
+            if (dir === 'left') {
+                targetL = (lane === 0) ? 1 : lane - 1;
+            } else {
+                targetL = (lane === 4) ? 3 : lane + 1;
+            }
+            newData.targetLane = targetL;
+        }
+        
+        levelData.waves.push(newData);
         levelData.waves.sort((a,b) => a.beat - b.beat);
         renderTimeline();
     };

@@ -247,7 +247,8 @@ class GameScene extends Phaser.Scene {
     this.waveQueue = level.waves.map(w => [
       w.beat * beatLen + offset, 
       w.type, 
-      w.lane
+      w.lane,
+      w.targetLane // <--- 누락되었던 목표 레인 추가
     ]);
     this.waveQueue.sort((a, b) => a[0] - b[0]);
     this.waveIdx   = 0;
@@ -461,12 +462,12 @@ class GameScene extends Phaser.Scene {
   processWaves() {
     const t = this.gs.elapsed;
     while (this.waveIdx < this.waveQueue.length && this.waveQueue[this.waveIdx][0] <= t) {
-      const [, type, lane] = this.waveQueue[this.waveIdx++];
+      const [, type, lane, targetLane] = this.waveQueue[this.waveIdx++];
       const l = lane < 0 ? ~~(Math.random()*5) : lane;
       if (type === 'boss') this.spawnBoss();
       else if (type === 'item_bomb')  this.spawnMapItem('bomb',  l);
       else if (type === 'item_fever') this.spawnMapItem('fever', l);
-      else this.spawnEnemy(type, l);
+      else this.spawnEnemy(type, l, targetLane);
     }
   }
 
@@ -475,7 +476,7 @@ class GameScene extends Phaser.Scene {
     this.items.push({ x: this.laneXs[lane], y: -20, vy: 50, type, size: 15, alive: true });
   }
 
-  spawnEnemy(type, lane) {
+  spawnEnemy(type, lane, targetLane) {
     const x = this.laneXs[lane];
     const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
     const phase    = bElapsed % this.beatInterval;
@@ -490,13 +491,15 @@ class GameScene extends Phaser.Scene {
       const btm = s.beatTimerMultiplier || 2;
       this.enemies.push({ x, y: -25, vy: s.speed * ds, type, lane,
         hp: s.hp, maxHp: s.hp, alive: true, size: 21, shootTimer: 0,
-        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1), btm });
+        beatTimer: toNext, spawnLane: lane, targetLane: targetLane ?? lane, 
+        pingPong: false, btm });
     } else if (type === 'skeleton' || type === 'pskeleton') {
       const isPoss = type === 'pskeleton';
       const btm = s.beatTimerMultiplier || 2;
       this.enemies.push({ x, y: -28, vy: s.speed * ds, type, lane,
         hp: s.hp, maxHp: s.hp, alive: true, size: 18, shootTimer: 0,
         settled: false, settleY: 100, exitTimer: 0,
+        spawnLane: lane, targetLane: targetLane ?? lane, pingPong: false,
         beatTimer: toNext * btm, beatCount: 0, ds, laneDir: isPoss ? 1 : 0, btm });
     }
   }
@@ -544,14 +547,14 @@ class GameScene extends Phaser.Scene {
         if (e.y > H + 30) e.alive = false;
 
       } else if (e.type === 'gbat') {
-        // 강화 돌진형: 느리게 낙하하면서 N비트마다 레인 이동
+        // 강화 돌진형: 지정된 두 레인 사이를 박자마다 번갈아 이동
         const s = this.stats[e.type] || {};
         e.y += e.vy * dt;
         e.beatTimer -= dt;
         if (e.beatTimer <= 0) {
           e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
-          e.lane = Phaser.Math.Clamp(e.lane + e.beatLaneDir, 0, 4);
-          if (e.lane === 0 || e.lane === 4) e.beatLaneDir *= -1;
+          e.pingPong = !e.pingPong;
+          e.lane = e.pingPong ? e.targetLane : e.spawnLane;
           this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 120, ease: 'Cubic.Out' });
         }
         if (e.y > H + 30) e.alive = false;
@@ -615,8 +618,10 @@ class GameScene extends Phaser.Scene {
             e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
               vx: 0, vy: (s.bulletSpeed || 200) * (e.ds||1), dmg: 1, alive: true });
-            e.lane = Phaser.Math.Clamp(e.lane + e.laneDir, 0, 4);
-            if (e.lane === 0 || e.lane === 4) e.laneDir *= -1;
+
+            // 지정된 두 레인 사이를 번갈아 이동
+            e.pingPong = !e.pingPong;
+            e.lane = e.pingPong ? e.targetLane : e.spawnLane;
             this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 170, ease: 'Cubic.Out' });
 
             const staySecs = (s.stayDuration || 8) * this.beatInterval;
