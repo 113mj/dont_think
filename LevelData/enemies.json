@@ -6,25 +6,25 @@
   },
   "gbat": {
     "speed": 200,
-    "hp": 3,
+    "hp": 2,
     "size": 21,
     "beatTimerMultiplier": 2
   },
   "skeleton": {
-    "speed": 68,
-    "hp": 5,
-    "size": 18,
-    "bulletSpeed": 205,
-    "beatTimerMultiplier": 2,
-    "stayDuration": 5.0
-  },
-  "pskeleton": {
-    "speed": 68,
-    "hp": 5,
+    "speed": 200,
+    "hp": 4,
     "size": 18,
     "bulletSpeed": 200,
     "beatTimerMultiplier": 2,
-    "stayDuration": 5.5
+    "stayDuration": 8
+  },
+  "pskeleton": {
+    "speed": 200,
+    "hp": 4,
+    "size": 18,
+    "bulletSpeed": 200,
+    "beatTimerMultiplier": 2,
+    "stayDuration": 8
   },
   "boss": {
     "hp": 80,

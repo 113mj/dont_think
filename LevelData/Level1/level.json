@@ -7,80 +7,62 @@
     "difficulty": "★★★",
     "bgmFile": "bgm.mp3"
   },
-  "enemyStats": {
-    "bat": {
-      "speed": 200,
-      "hp": 1
-    },
-    "gbat": {
-      "speed": 130,
-      "hp": 3,
-      "beatTimerMultiplier": 2
-    },
-    "skeleton": {
-      "speed": 68,
-      "hp": 5,
-      "shootTimerMultiplier": 2
-    },
-    "pskeleton": {
-      "speed": 68,
-      "hp": 5,
-      "shootTimerMultiplier": 2
-    },
-    "boss": {
-      "hp": 80
-    }
-  },
   "waves": [
     {
-      "beat": 3,
+      "beat": 1,
       "type": "bat",
-      "lane": 4
+      "lane": 1
     },
     {
-      "beat": 4,
+      "beat": 2,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 3,
       "type": "bat",
       "lane": 3
     },
     {
       "beat": 5,
       "type": "bat",
-      "lane": 2
+      "lane": 4
     },
     {
       "beat": 6,
       "type": "bat",
-      "lane": 1
+      "lane": 3
     },
     {
       "beat": 7,
       "type": "bat",
-      "lane": 0
-    },
-    {
-      "beat": 14,
-      "type": "bat",
-      "lane": 4
-    },
-    {
-      "beat": 15,
-      "type": "bat",
-      "lane": 3
-    },
-    {
-      "beat": 16,
-      "type": "bat",
       "lane": 2
     },
     {
-      "beat": 17,
+      "beat": 8,
       "type": "bat",
       "lane": 1
     },
     {
-      "beat": 18,
+      "beat": 10,
       "type": "bat",
-      "lane": 0
+      "lane": 1
+    },
+    {
+      "beat": 12,
+      "type": "gbat",
+      "lane": 1,
+      "targetLane": 0
+    },
+    {
+      "beat": 14,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 15,
+      "type": "bat",
+      "lane": 4
     },
     {
       "beat": 18,
@@ -94,88 +76,102 @@
     },
     {
       "beat": 20,
+      "type": "gbat",
+      "lane": 3,
+      "targetLane": 2
+    },
+    {
+      "beat": 22,
+      "type": "gbat",
+      "lane": 4,
+      "targetLane": 3
+    },
+    {
+      "beat": 24,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 25,
+      "type": "bat",
+      "lane": 4
+    },
+    {
+      "beat": 26,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 27,
       "type": "bat",
       "lane": 2
     },
     {
-      "beat": 21,
+      "beat": 28,
       "type": "bat",
       "lane": 1
     },
     {
-      "beat": 22,
+      "beat": 29,
       "type": "bat",
       "lane": 0
     },
     {
-      "type": "gbat",
-      "lane": 2,
-      "beat": 48
+      "beat": 30,
+      "type": "bat",
+      "lane": 1
     },
     {
+      "beat": 31,
       "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 32,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 34,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 36,
+      "type": "gbat",
+      "lane": 2,
+      "targetLane": 3
+    },
+    {
+      "beat": 38,
+      "type": "gbat",
       "lane": 4,
-      "beat": 52
+      "targetLane": 3
     },
     {
-      "type": "item_fever",
-      "lane": -1,
-      "beat": 56
-    },
-    {
-      "type": "pskeleton",
-      "lane": 2,
-      "beat": 58
-    },
-    {
+      "beat": 39,
       "type": "bat",
-      "lane": 0,
-      "beat": 62
+      "lane": 2
     },
     {
-      "type": "gbat",
-      "lane": 2,
-      "beat": 70
-    },
-    {
-      "type": "skeleton",
-      "lane": 1,
-      "beat": 74
-    },
-    {
+      "beat": 40,
       "type": "bat",
-      "lane": 3,
-      "beat": 78
+      "lane": 1
     },
     {
-      "type": "item_bomb",
-      "lane": -1,
-      "beat": 80
-    },
-    {
+      "beat": 41,
       "type": "bat",
-      "lane": 0,
-      "beat": 82
+      "lane": 0
     },
     {
-      "type": "pskeleton",
-      "lane": 2,
-      "beat": 86
-    },
-    {
-      "type": "gbat",
-      "lane": 1,
-      "beat": 90
-    },
-    {
+      "beat": 43,
       "type": "bat",
-      "lane": 3,
-      "beat": 94
+      "lane": 0
     },
     {
-      "type": "skeleton",
-      "lane": 4,
-      "beat": 96
+      "beat": 45,
+      "type": "bat",
+      "lane": 0
     },
     {
       "type": "boss",
