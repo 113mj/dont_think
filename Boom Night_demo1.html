@@ -563,14 +563,18 @@ class GameScene extends Phaser.Scene {
           if (e.y >= e.settleY) {
             e.y = e.settleY;
             e.settled = true;
-            // [도착 시 타이밍 재정렬: 0.5비트 단위]
             const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
-            const syncUnit = this.beatInterval / 2; // 0.5비트 간격으로 정렬
+            const syncUnit = this.beatInterval / 2;
             const phase    = bElapsed % syncUnit;
             const toNext   = syncUnit - phase;
             e.beatTimer    = toNext; 
           }
+        } else if (e.exiting) {
+          // [퇴장 모드] 위로 이동만 수행, 사격 중지
+          e.y -= 90 * dt;
+          if (e.y < -40) e.alive = false;
         } else {
+          // [대기/공격 모드]
           e.exitTimer += dt;
           e.beatTimer -= dt;
           if (e.beatTimer <= 0) {
@@ -578,10 +582,13 @@ class GameScene extends Phaser.Scene {
             e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
               vx: 0, vy: (s.bulletSpeed || 205) * (e.ds||1), dmg: 1, alive: true });
+            
+            // 박자 단위 머무는 시간이 지났다면, 이번 사격을 끝으로 퇴장 모드 전환
+            const staySecs = (s.stayDuration || 8) * this.beatInterval;
+            if (e.exitTimer >= staySecs) {
+              e.exiting = true;
+            }
           }
-          // stayDuration을 비트 단위로 계산 (비트수 * 비트간격 = 초)
-          const staySecs = (s.stayDuration || 8) * this.beatInterval;
-          if (e.exitTimer >= staySecs) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
         }
 
       } else if (e.type === 'pskeleton') {
@@ -591,12 +598,15 @@ class GameScene extends Phaser.Scene {
           if (e.y >= e.settleY) {
             e.y = e.settleY;
             e.settled = true;
-            // [도착 시 타이밍 재정렬]
             const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
-            const phase    = bElapsed % this.beatInterval;
-            const toNext   = this.beatInterval - phase;
+            const syncUnit = this.beatInterval / 2;
+            const phase    = bElapsed % syncUnit;
+            const toNext   = syncUnit - phase;
             e.beatTimer    = toNext;
           }
+        } else if (e.exiting) {
+          e.y -= 90 * dt;
+          if (e.y < -40) e.alive = false;
         } else {
           e.exitTimer += dt;
           e.beatTimer -= dt;
@@ -608,9 +618,12 @@ class GameScene extends Phaser.Scene {
             e.lane = Phaser.Math.Clamp(e.lane + e.laneDir, 0, 4);
             if (e.lane === 0 || e.lane === 4) e.laneDir *= -1;
             this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 170, ease: 'Cubic.Out' });
+
+            const staySecs = (s.stayDuration || 8) * this.beatInterval;
+            if (e.exitTimer >= staySecs) {
+              e.exiting = true;
+            }
           }
-          const staySecs = (s.stayDuration || 8) * this.beatInterval;
-          if (e.exitTimer >= staySecs) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
         }
 
       } else if (e.type === 'boss') {
