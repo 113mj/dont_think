@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Boo!m Night</title>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+<script src="LevelEditor/EnemyData.js"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#000; display:flex; align-items:center; justify-content:center; min-height:100vh; }
@@ -23,6 +24,30 @@ const SONGS = [
   { key: 'bgm3', file: 'Crimson_Arcade_3.mp3',  name: 'Crimson Arcade',
     bpm: 130, offset: 0.51, difficulty: '★★★★',  diffScale: 1.18, available: true },
 ];
+
+// --- Level Configuration ---
+const DEFAULT_GAME_CONFIG = {
+  enemyStats: {
+    bat: { hp: 1, vy: 200, size: 14 },
+    gbat: { hp: 3, vy: 130, size: 21, moveInterval: 2 },
+    skeleton: { hp: 5, vy: 68, size: 18, shootInterval: 2, bulletVy: 205, exitTime: 5 },
+    pskeleton: { hp: 5, vy: 68, size: 18, shootInterval: 2, bulletVy: 200, exitTime: 5.5 }
+  },
+  bossStats: {
+    hp: 80, vy: 65, size: 48, settleY: 118, phaseInterval: 6
+  },
+  // Default waves for Stage 1
+  waves: [
+    [2.36,  'bat', 2], [5.13,  'bat', 0], [7.89,  'bat', 4], [10.66, 'gbat', 2], [13.43, 'bat', 1], [15.28, 'item_bomb', 2],
+    [16.20, 'skeleton', 0], [18.05, 'bat', 3], [22.66, 'gbat', 2], [24.51, 'bat', 4], [26.35, 'item_fever', -1],
+    [27.28, 'pskeleton', 2], [29.12, 'bat', 0], [32.82, 'gbat', 2], [34.66, 'skeleton', 1], [36.51, 'bat', 3], [37.43, 'item_bomb', -1],
+    [38.35, 'bat', 0], [40.20, 'pskeleton', 2], [42.05, 'gbat', 1], [43.89, 'bat', 3], [44.81, 'skeleton', 4],
+    [46.66, 'boss', 2],
+  ]
+};
+
+// Global config that can be overridden by Level Editor output
+window.CUSTOM_GAME_CONFIG = null;
 
 class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
