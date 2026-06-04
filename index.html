@@ -15,9 +15,18 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 const W = 480, H = 720;
 const LANE_XS = [52, 146, 240, 334, 428];
 
+const SONGS = [
+  { key: 'bgm', file: 'Ghoulish_Groove_1.mp3', name: 'Ghoulish Groove',
+    bpm: 130, offset: 0.51, difficulty: '★★★', available: true },
+  { available: false },
+  { available: false },
+];
+
 class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
-  preload() { this.load.audio('bgm', 'Ghoulish_Groove_1.mp3'); }
+  preload() {
+    SONGS.filter(s => s.available && s.file).forEach(s => this.load.audio(s.key, s.file));
+  }
   create() { this.scene.start('TitleScene'); }
 }
 
@@ -70,10 +79,93 @@ class TitleScene extends Phaser.Scene {
     zone.on('pointerout',  () => drawBtn(0x882200));
     zone.on('pointerdown', () => {
       this.cameras.main.fade(300, 0, 0, 0);
-      this.time.delayedCall(300, () => this.scene.start('GameScene'));
+      this.time.delayedCall(300, () => this.scene.start('SongSelectScene'));
     });
 
     this.tweens.add({ targets: title, y: H/2 - 180, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+  }
+}
+
+// ─── SongSelectScene ─────────────────────────────────────────────────────────
+class SongSelectScene extends Phaser.Scene {
+  constructor() { super('SongSelectScene'); }
+  create() {
+    this.cameras.main.fadeIn(400);
+
+    // 배경
+    this.add.rectangle(0, 0, W, H, 0x080010).setOrigin(0);
+    for (let i = 0; i < 80; i++)
+      this.add.circle(Math.random()*W, Math.random()*H, Math.random()*1.5+0.3, 0xffffff, Math.random()*0.45+0.08);
+
+    // 달
+    const mg = this.add.graphics();
+    mg.fillStyle(0xffeeaa, 0.88); mg.fillCircle(W-75, 85, 50);
+    mg.fillStyle(0x080010, 1);    mg.fillCircle(W-52, 72, 50);
+
+    // 뒤로가기
+    const backBg = this.add.graphics();
+    backBg.fillStyle(0x330011, 0.8); backBg.fillRoundedRect(10, 10, 70, 28, 8);
+    const backZone = this.add.zone(45, 24, 70, 28).setInteractive();
+    this.add.text(45, 24, '← 뒤로', { fontSize: '13px', fontFamily: 'system-ui', color: '#ffaa66' }).setOrigin(0.5);
+    backZone.on('pointerover',  () => { backBg.clear(); backBg.fillStyle(0x551122, 0.9); backBg.fillRoundedRect(10, 10, 70, 28, 8); });
+    backZone.on('pointerout',   () => { backBg.clear(); backBg.fillStyle(0x330011, 0.8); backBg.fillRoundedRect(10, 10, 70, 28, 8); });
+    backZone.on('pointerdown',  () => { this.cameras.main.fade(300, 0,0,0); this.time.delayedCall(300, () => this.scene.start('TitleScene')); });
+
+    // 타이틀
+    this.add.text(W/2, 58, '🎵 곡 선택', {
+      fontSize: '30px', fontFamily: 'system-ui', color: '#ff8800', fontStyle: 'bold',
+      stroke: '#220000', strokeThickness: 5,
+    }).setOrigin(0.5);
+
+    // 곡 카드
+    const cardW = W - 60, cardH = 115;
+    SONGS.forEach((song, i) => {
+      const cardX = W / 2, cardY = 175 + i * 140;
+      const bg = this.add.graphics();
+
+      const draw = (hover) => {
+        bg.clear();
+        if (song.available) {
+          bg.fillStyle(hover ? 0x3a0022 : 0x1e000f, 1);
+          bg.lineStyle(2, hover ? 0xff6600 : 0x882200, 1);
+        } else {
+          bg.fillStyle(0x111118, 0.75);
+          bg.lineStyle(2, 0x333344, 1);
+        }
+        bg.fillRoundedRect(cardX - cardW/2, cardY - cardH/2, cardW, cardH, 14);
+        bg.strokeRoundedRect(cardX - cardW/2, cardY - cardH/2, cardW, cardH, 14);
+      };
+      draw(false);
+
+      if (song.available) {
+        this.add.text(cardX, cardY - 24, song.name, {
+          fontSize: '22px', fontFamily: 'system-ui', color: '#ffeeaa', fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.add.text(cardX - 70, cardY + 16, `BPM ${song.bpm}`, {
+          fontSize: '13px', fontFamily: 'system-ui', color: '#ff8844'
+        }).setOrigin(0.5);
+        this.add.text(cardX + 70, cardY + 16, song.difficulty, {
+          fontSize: '14px', fontFamily: 'system-ui', color: '#ffcc44'
+        }).setOrigin(0.5);
+
+        const zone = this.add.zone(cardX, cardY, cardW, cardH).setInteractive();
+        zone.on('pointerover',  () => draw(true));
+        zone.on('pointerout',   () => draw(false));
+        zone.on('pointerdown',  () => {
+          this.cameras.main.fade(400, 0,0,0);
+          this.time.delayedCall(400, () => this.scene.start('GameScene', {
+            songKey: song.key, bpm: song.bpm, offset: song.offset,
+          }));
+        });
+      } else {
+        this.add.text(cardX, cardY - 10, '🔒 준비 중', {
+          fontSize: '18px', fontFamily: 'system-ui', color: '#555566'
+        }).setOrigin(0.5);
+        this.add.text(cardX, cardY + 20, 'Coming Soon', {
+          fontSize: '12px', fontFamily: 'system-ui', color: '#444455'
+        }).setOrigin(0.5);
+      }
+    });
   }
 }
 
@@ -81,7 +173,12 @@ class TitleScene extends Phaser.Scene {
 class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
 
-  create() {
+  create(data) {
+    const songData = data || {};
+    this.songKey      = songData.songKey || 'bgm';
+    this.beatInterval = 60 / (songData.bpm    || 130);
+    this.beatOffset   = songData.offset || 0.51;
+
     this.gs = {
       lives: 3, score: 0, bombs: 2,
       fever: false, feverTimer: 0,
@@ -106,10 +203,6 @@ class GameScene extends Phaser.Scene {
     this.waveQueue = this.buildStage1();
     this.waveIdx   = 0;
 
-    // BPM 130 박자 정보 (시각 효과용)
-    this.beatInterval = 60 / 130;  // 0.462s
-    this.beatOffset   = 0.51;      // 첫 비트 시작 offset
-
     this.bgGfx       = this.add.graphics().setDepth(0);
     this.enemyGfx    = this.add.graphics().setDepth(3);
     this.itemGfx     = this.add.graphics().setDepth(3);
@@ -128,9 +221,9 @@ class GameScene extends Phaser.Scene {
 
     // 배경 음악 (로딩 실패 시 게임은 계속 진행)
     this.bgm = null;
-    if (this.cache.audio.exists('bgm')) {
+    if (this.cache.audio.exists(this.songKey)) {
       this.sound.stopAll();
-      this.bgm = this.sound.add('bgm', { loop: true, volume: 0.5 });
+      this.bgm = this.sound.add(this.songKey, { loop: true, volume: 0.5 });
       this.bgm.play();
     }
   }
@@ -180,15 +273,12 @@ class GameScene extends Phaser.Scene {
 
   buildHUD() {
     this.add.rectangle(0, 0, W, 42, 0x000000, 0.72).setOrigin(0).setDepth(10);
-    this.livesDisp = this.add.text(10, 8, '👻 👻 👻', {
-      fontSize: '18px', fontFamily: 'system-ui', color: '#ffffff'
-    }).setDepth(11);
-    this.scoreDisp = this.add.text(W-10, 8, '0', {
-      fontSize: '18px', fontFamily: 'system-ui', color: '#ffeeaa'
-    }).setOrigin(1, 0).setDepth(11);
-    this.comboDisp = this.add.text(W/2, 8, '', {
-      fontSize: '13px', fontFamily: 'system-ui', color: '#ffcc88'
-    }).setOrigin(0.5, 0).setDepth(11);
+    this.scoreDisp = this.add.text(10, 8, '0', {
+      fontSize: '16px', fontFamily: 'system-ui', color: '#ffeeaa'
+    }).setOrigin(0, 0).setDepth(11);
+
+    // 비트 바 (상단 HUD 중앙)
+    this.beatBarGfx = this.add.graphics().setDepth(12);
 
     this.add.rectangle(0, H-32, W, 32, 0x000000, 0.72).setOrigin(0).setDepth(10);
     this.bombDisp = this.add.text(12, H-16, '💣 x2', {
@@ -197,6 +287,12 @@ class GameScene extends Phaser.Scene {
     this.feverDisp = this.add.text(W/2, H-16, '', {
       fontSize: '14px', fontFamily: 'system-ui', color: '#ffff55'
     }).setOrigin(0.5).setDepth(11);
+    this.comboDisp = this.add.text(W/2, H-16, '', {
+      fontSize: '13px', fontFamily: 'system-ui', color: '#ffcc88'
+    }).setOrigin(0.5).setDepth(11);
+    this.livesDisp = this.add.text(W-10, H-16, '👻 👻 👻', {
+      fontSize: '16px', fontFamily: 'system-ui', color: '#ffffff'
+    }).setOrigin(1, 0.5).setDepth(11);
 
     this.bossHpBg   = this.add.rectangle(W/2, H-52, W-40, 10, 0x330000).setDepth(12).setVisible(false);
     this.bossHpFill = this.add.rectangle(20, H-52, W-40, 10, 0xff2222).setOrigin(0, 0.5).setDepth(12).setVisible(false);
@@ -758,6 +854,45 @@ class GameScene extends Phaser.Scene {
     const beatPulse = Math.max(0, 1 - beatPhase * 5);   // 비트마다 짧은 플래시
     const barPulse  = Math.max(0, 1 - barPhase  * 8);   // 마디마다 강한 플래시
 
+    // 비트 바 UI — 진자 방식 (중앙 통과 = 박자)
+    this.beatBarGfx.clear();
+    {
+      const bEl    = Math.max(0, this.gs.elapsed - this.beatOffset);
+      const angle  = (bEl * Math.PI) / this.beatInterval; // 비트마다 sin=0 (중앙)
+      const sinPos = Math.sin(angle);
+      const HALF   = 168;   // 커서 이동 범위 ±px
+      const cy     = 21;
+      const cx     = W / 2;
+
+      // 트랙 배경
+      this.beatBarGfx.fillStyle(0x1a0011, 0.85);
+      this.beatBarGfx.fillRoundedRect(cx - HALF - 8, cy - 9, (HALF + 8) * 2, 18, 6);
+
+      // 좌우 끝 마커 (반환점)
+      for (const ex of [cx - HALF, cx + HALF]) {
+        this.beatBarGfx.fillStyle(0x552233, 0.7);
+        this.beatBarGfx.fillRect(ex - 1.5, cy - 7, 3, 14);
+      }
+
+      // 중앙 히트존
+      const nearCenter = Math.abs(sinPos) < 0.45;
+      this.beatBarGfx.fillStyle(nearCenter ? 0xff4400 : 0x441122, nearCenter ? 0.75 : 0.5);
+      this.beatBarGfx.fillRect(cx - 3, cy - 11, 6, 22);
+      if (nearCenter) {
+        this.beatBarGfx.fillStyle(0xff8800, (0.45 - Math.abs(sinPos)) * 0.8);
+        this.beatBarGfx.fillRect(cx - 10, cy - 13, 20, 26);
+      }
+
+      // 움직이는 커서
+      const cursorX = cx + sinPos * HALF;
+      this.beatBarGfx.fillStyle(0xff6600, 0.28);
+      this.beatBarGfx.fillCircle(cursorX, cy, 11);
+      this.beatBarGfx.fillStyle(0xff8800, 1);
+      this.beatBarGfx.fillCircle(cursorX, cy, 5.5);
+      this.beatBarGfx.fillStyle(0xffffff, 0.85);
+      this.beatBarGfx.fillCircle(cursorX - 1.5, cy - 1.5, 2);
+    }
+
     // 배경
     this.bgGfx.clear();
     this.bgGfx.fillStyle(0x080010);
@@ -1017,7 +1152,7 @@ class ClearScene extends Phaser.Scene {
     const z = this.add.zone(W/2, H/2+150, 200, 50).setInteractive();
     this.add.text(W/2, H/2+150, '다시 시작', { fontSize: '22px', fontFamily: 'system-ui', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
     z.on('pointerover', () => d(0xcc3300)).on('pointerout', () => d(0x882200));
-    z.on('pointerdown', () => { this.cameras.main.fade(300,0,0,0); this.time.delayedCall(300, () => this.scene.start('GameScene')); });
+    z.on('pointerdown', () => { this.cameras.main.fade(300,0,0,0); this.time.delayedCall(300, () => this.scene.start('SongSelectScene')); });
   }
 }
 
@@ -1046,7 +1181,7 @@ class GameOverScene extends Phaser.Scene {
     const z = this.add.zone(W/2, H/2+130, 200, 50).setInteractive();
     this.add.text(W/2, H/2+130, '다시 시작', { fontSize: '22px', fontFamily: 'system-ui', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
     z.on('pointerover', () => d(0xcc3300)).on('pointerout', () => d(0x882200));
-    z.on('pointerdown', () => { this.cameras.main.fade(300,0,0,0); this.time.delayedCall(300, () => this.scene.start('GameScene')); });
+    z.on('pointerdown', () => { this.cameras.main.fade(300,0,0,0); this.time.delayedCall(300, () => this.scene.start('SongSelectScene')); });
   }
 }
 
@@ -1056,7 +1191,7 @@ new Phaser.Game({
   resolution: window.devicePixelRatio || 1,
   render: { antialias: true, roundPixels: false },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [BootScene, TitleScene, GameScene, ClearScene, GameOverScene],
+  scene: [BootScene, TitleScene, SongSelectScene, GameScene, ClearScene, GameOverScene],
   backgroundColor: '#000000',
 });
 </script>
