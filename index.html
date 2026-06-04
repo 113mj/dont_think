@@ -377,15 +377,13 @@ class GameScene extends Phaser.Scene {
     const toNext   = this.beatInterval - phase;
 
     if (type === 'bat') {
-      this.enemies.push({ x, y: -20, vy: 80, type, lane,
+      this.enemies.push({ x, y: -20, vy: 200, type, lane,
         hp: 3, maxHp: 3, alive: true, size: 14, shootTimer: 0,
-        settled: false, settleY: 60 + Math.random()*80, exitTimer: 0,
-        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1), beatCount: 0 });
+        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1) });
     } else if (type === 'gbat') {
-      this.enemies.push({ x, y: -25, vy: 80, type, lane,
-        hp: 3, maxHp: 3, alive: true, size: 21, shootTimer: 0,
-        settled: false, settleY: 60 + Math.random()*100, exitTimer: 0,
-        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1), beatCount: 0 });
+      this.enemies.push({ x, y: -25, vy: 130, type, lane,
+        hp: 4, maxHp: 4, alive: true, size: 21, shootTimer: 0,
+        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1) });
     } else if (type === 'skeleton') {
       this.enemies.push({ x, y: -28, vy: 68, type, lane,
         hp: 5, maxHp: 5, alive: true, size: 18, shootTimer: 0,
@@ -437,50 +435,28 @@ class GameScene extends Phaser.Scene {
       e.shootTimer += dt;
 
       if (e.type === 'bat') {
-        if (!e.settled) {
-          e.y += e.vy * dt;
-          if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
-        } else {
-          e.exitTimer += dt;
-          e.beatTimer -= dt;
-          if (e.beatTimer <= 0) {
-            e.beatTimer += this.beatInterval;
-            e.beatCount++;
-            // 매 비트: 레인 이동
-            e.lane = Phaser.Math.Clamp(e.lane + e.beatLaneDir, 0, 4);
-            if (e.lane === 0 || e.lane === 4) e.beatLaneDir *= -1;
-            this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 100, ease: 'Cubic.Out' });
-            // 2비트마다: 아래로 사격
-            if (e.beatCount % 2 === 0) {
-              this.enemyBullets.push({ x: e.x, y: e.y + e.size,
-                vx: 0, vy: 200, dmg: 1, alive: true });
-            }
-          }
-          if (e.exitTimer >= 5) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
+        // 돌진형: 아래로 낙하하면서 비트마다 레인 이동
+        e.y += e.vy * dt;
+        e.beatTimer -= dt;
+        if (e.beatTimer <= 0) {
+          e.beatTimer += this.beatInterval;
+          e.lane = Phaser.Math.Clamp(e.lane + e.beatLaneDir, 0, 4);
+          if (e.lane === 0 || e.lane === 4) e.beatLaneDir *= -1;
+          this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 90, ease: 'Cubic.Out' });
         }
+        if (e.y > H + 30) e.alive = false;
 
       } else if (e.type === 'gbat') {
-        if (!e.settled) {
-          e.y += e.vy * dt;
-          if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
-        } else {
-          e.exitTimer += dt;
-          e.beatTimer -= dt;
-          if (e.beatTimer <= 0) {
-            e.beatTimer += this.beatInterval;
-            e.beatCount++;
-            // 매 비트: 사격
-            this.enemyBullets.push({ x: e.x, y: e.y + e.size,
-              vx: 0, vy: 200, dmg: 1, alive: true });
-            // 2비트마다: 레인 이동
-            if (e.beatCount % 2 === 0) {
-              e.lane = Phaser.Math.Clamp(e.lane + e.beatLaneDir, 0, 4);
-              if (e.lane === 0 || e.lane === 4) e.beatLaneDir *= -1;
-              this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 120, ease: 'Cubic.Out' });
-            }
-          }
-          if (e.exitTimer >= 6) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
+        // 강화 돌진형: 느리게 낙하하면서 2비트마다 레인 이동
+        e.y += e.vy * dt;
+        e.beatTimer -= dt;
+        if (e.beatTimer <= 0) {
+          e.beatTimer += this.beatInterval * 2;
+          e.lane = Phaser.Math.Clamp(e.lane + e.beatLaneDir, 0, 4);
+          if (e.lane === 0 || e.lane === 4) e.beatLaneDir *= -1;
+          this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 120, ease: 'Cubic.Out' });
         }
+        if (e.y > H + 30) e.alive = false;
 
       } else if (e.type === 'skeleton') {
         if (!e.settled) {
