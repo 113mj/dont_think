@@ -560,7 +560,16 @@ class GameScene extends Phaser.Scene {
         const s = this.stats[e.type] || {};
         if (!e.settled) {
           e.y += e.vy * dt;
-          if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
+          if (e.y >= e.settleY) {
+            e.y = e.settleY;
+            e.settled = true;
+            // [도착 시 타이밍 재정렬: 0.5비트 단위]
+            const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
+            const syncUnit = this.beatInterval / 2; // 0.5비트 간격으로 정렬
+            const phase    = bElapsed % syncUnit;
+            const toNext   = syncUnit - phase;
+            e.beatTimer    = toNext; 
+          }
         } else {
           e.exitTimer += dt;
           e.beatTimer -= dt;
@@ -579,7 +588,15 @@ class GameScene extends Phaser.Scene {
         const s = this.stats[e.type] || {};
         if (!e.settled) {
           e.y += e.vy * dt;
-          if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
+          if (e.y >= e.settleY) {
+            e.y = e.settleY;
+            e.settled = true;
+            // [도착 시 타이밍 재정렬]
+            const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
+            const phase    = bElapsed % this.beatInterval;
+            const toNext   = this.beatInterval - phase;
+            e.beatTimer    = toNext;
+          }
         } else {
           e.exitTimer += dt;
           e.beatTimer -= dt;
