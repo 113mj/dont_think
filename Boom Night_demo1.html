@@ -386,17 +386,38 @@ class GameScene extends Phaser.Scene {
     const p = this.player;
     // 이동 후 위치(새 레인)에서 레이저 발사
     const laserX = this.laneXs[p.lane];
-    this.lasers.push({ x: laserX, fromY: p.y - p.h * 0.5, life: 0.22, maxLife: 0.22 });
+    
+    // 가장 가까운 적 찾기 (관통 방지)
+    let targetY = 42; // HUD 하단 (기본 목표점)
+    let hitEnemy = null;
+    let minDiffY = 9999;
 
-    // 같은 레인, 플레이어 위에 있는 적 즉시 타격
     this.enemies.forEach(e => {
       if (!e.alive) return;
-      if (Math.abs(e.x - laserX) < 48 && e.y < p.y) {
-        this.damageEnemy(e, 1);
+      // 같은 레인 판정 (중심 거리 40px 이내)
+      if (Math.abs(e.x - laserX) < 40 && e.y < p.y) {
+        const diffY = p.y - e.y;
+        if (diffY < minDiffY) {
+          minDiffY = diffY;
+          hitEnemy = e;
+        }
       }
     });
 
-    // 비트 타이밍 판정 (±100ms 허용)
+    if (hitEnemy) {
+      this.damageEnemy(hitEnemy, 1);
+      targetY = hitEnemy.y + (hitEnemy.size * 0.5); // 적의 하단부 근처에서 레이저 멈춤
+    }
+
+    this.lasers.push({ 
+      x: laserX, 
+      fromY: p.y - p.h * 0.5, 
+      toY: targetY, 
+      life: 0.22, 
+      maxLife: 0.22 
+    });
+
+    // 비트 타이밍 판정 (±150ms 허용)
     const tolerance = 0.15;
     const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
     const phase = bElapsed % this.beatInterval;
@@ -1128,23 +1149,24 @@ class GameScene extends Phaser.Scene {
     this.laserGfx.clear();
     this.lasers.forEach(l => {
       const a = l.life / l.maxLife;
+      const endY = l.toY || 42;
       // 외곽 글로우
       this.laserGfx.lineStyle(10, 0xcc44ff, a * 0.25);
       this.laserGfx.beginPath();
       this.laserGfx.moveTo(l.x, l.fromY);
-      this.laserGfx.lineTo(l.x, 42);
+      this.laserGfx.lineTo(l.x, endY);
       this.laserGfx.strokePath();
       // 중간 빔
       this.laserGfx.lineStyle(4, 0xff88ff, a * 0.7);
       this.laserGfx.beginPath();
       this.laserGfx.moveTo(l.x, l.fromY);
-      this.laserGfx.lineTo(l.x, 42);
+      this.laserGfx.lineTo(l.x, endY);
       this.laserGfx.strokePath();
       // 코어 (흰색)
       this.laserGfx.lineStyle(1.5, 0xffffff, a);
       this.laserGfx.beginPath();
       this.laserGfx.moveTo(l.x, l.fromY);
-      this.laserGfx.lineTo(l.x, 42);
+      this.laserGfx.lineTo(l.x, endY);
       this.laserGfx.strokePath();
     });
 
