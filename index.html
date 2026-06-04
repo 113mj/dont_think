@@ -247,29 +247,27 @@ class GameScene extends Phaser.Scene {
       [13.43, 'bat', 1],
       [15.28, 'item_bomb', 2],
 
-      // === 중반 (bar 9~15): 해골 등장, 박쥐 간헐적 ===
+      // === 중반 (bar 9~15): 해골 등장 (빈도 줄임) ===
       [16.20, 'skeleton', 0],
       [18.05, 'bat', 3],
-      [19.89, 'skeleton', 4],
       [22.66, 'gbat', 2],
-      [24.51, 'skeleton', 1],
+      [24.51, 'bat', 4],
       [26.35, 'item_fever', -1],
 
       // === 중후반 (bar 15~21): 귀신해골 + 박쥐/강화박쥐 혼합 ===
       [27.28, 'pskeleton', 2],
       [29.12, 'bat', 0],
-      [30.97, 'skeleton', 4],
       [32.82, 'gbat', 2],
-      [34.66, 'pskeleton', 1],
+      [34.66, 'skeleton', 1],
       [36.51, 'bat', 3],
       [37.43, 'item_bomb', -1],
 
       // === 후반 (bar 21~25): 강화 혼합 ===
-      [38.35, 'bat', 0],   [38.35, 'skeleton', 4],
+      [38.35, 'bat', 0],
       [40.20, 'pskeleton', 2],
       [42.05, 'gbat', 1],
       [43.89, 'bat', 3],
-      [44.81, 'pskeleton', 0],
+      [44.81, 'skeleton', 4],
 
       // === 보스 (bar 25) ===
       [46.66, 'boss', 2],
@@ -287,26 +285,24 @@ class GameScene extends Phaser.Scene {
       [12.51, 'bat', 4],
       [14.36, 'item_bomb', 2],
 
-      // === 중반: 해골 등장, 강화박쥐 혼합 ===
-      [16.20, 'skeleton', 1],  [16.20, 'skeleton', 3],
+      // === 중반: 해골 등장 (빈도 줄임) ===
+      [16.20, 'skeleton', 1],
       [18.05, 'gbat', 2],
       [19.89, 'bat', 0],
-      [21.74, 'skeleton', 4],
-      [23.59, 'gbat', 2],      [23.59, 'bat', 0],
-      [25.43, 'skeleton', 2],
+      [23.59, 'gbat', 2],      [23.59, 'bat', 4],
+      [25.43, 'skeleton', 3],
       [26.35, 'item_fever', -1],
 
       // === 중후반: 귀신해골 + 강화박쥐 ===
       [27.28, 'pskeleton', 0],
       [29.12, 'gbat', 3],
-      [30.97, 'skeleton', 1],
       [32.82, 'gbat', 2],
       [34.66, 'pskeleton', 4],
       [36.51, 'gbat', 0],  [36.51, 'bat', 3],
       [37.43, 'item_bomb', -1],
 
-      // === 후반: 쌍 공세 ===
-      [38.35, 'pskeleton', 1],  [38.35, 'skeleton', 3],
+      // === 후반: 혼합 공세 ===
+      [38.35, 'skeleton', 3],
       [40.20, 'gbat', 2],
       [41.12, 'bat', 0],        [41.12, 'bat', 4],
       [42.97, 'pskeleton', 2],
@@ -328,29 +324,28 @@ class GameScene extends Phaser.Scene {
       [12.51, 'gbat', 2],
       [14.36, 'item_bomb', 0],
 
-      // === 중반: 귀신해골 이른 등장 ===
+      // === 중반: 귀신해골 이른 등장 (빈도 줄임) ===
       [15.28, 'pskeleton', 2],
-      [17.12, 'skeleton', 0],  [17.12, 'skeleton', 4],
+      [17.12, 'skeleton', 0],
       [18.97, 'gbat', 2],
-      [20.82, 'pskeleton', 1],
       [22.66, 'skeleton', 3],
       [24.51, 'gbat', 0],  [24.51, 'bat', 4],
       [26.35, 'item_fever', -1],
 
       // === 중후반: 귀신해골+강화박쥐 압박 ===
-      [27.28, 'pskeleton', 0],  [27.28, 'skeleton', 4],
+      [27.28, 'pskeleton', 0],
       [29.12, 'gbat', 2],
       [30.97, 'pskeleton', 3],
-      [32.82, 'skeleton', 1],   [32.82, 'gbat', 4],
-      [34.66, 'pskeleton', 2],
+      [32.82, 'gbat', 4],
+      [34.66, 'skeleton', 1],
       [36.51, 'bat', 0],        [36.51, 'bat', 4],
       [37.43, 'item_bomb', -1],
 
-      // === 후반: 귀신해골 러시 ===
-      [38.35, 'pskeleton', 1],  [38.35, 'pskeleton', 3],
+      // === 후반: 귀신해골 러시 (쌍 → 단독으로) ===
+      [38.35, 'pskeleton', 1],
       [40.20, 'gbat', 2],
-      [41.12, 'skeleton', 0],   [41.12, 'skeleton', 4],
-      [42.97, 'pskeleton', 2],
+      [41.12, 'skeleton', 0],   [41.12, 'bat', 4],
+      [42.97, 'pskeleton', 3],
       [44.81, 'gbat', 1],       [44.81, 'bat', 3],
 
       // === 보스 ===
@@ -564,11 +559,10 @@ class GameScene extends Phaser.Scene {
     const ds = this.diffScale;
     if (type === 'bat') {
       this.enemies.push({ x, y: -20, vy: 200 * ds, type, lane,
-        hp: 3, maxHp: 3, alive: true, size: 14, shootTimer: 0,
-        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1) });
+        hp: 1, maxHp: 1, alive: true, size: 14, shootTimer: 0 });
     } else if (type === 'gbat') {
       this.enemies.push({ x, y: -25, vy: 130 * ds, type, lane,
-        hp: 4, maxHp: 4, alive: true, size: 21, shootTimer: 0,
+        hp: 3, maxHp: 3, alive: true, size: 21, shootTimer: 0,
         beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1) });
     } else if (type === 'skeleton') {
       this.enemies.push({ x, y: -28, vy: 68 * ds, type, lane,
