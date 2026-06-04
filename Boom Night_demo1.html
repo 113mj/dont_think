@@ -458,7 +458,7 @@ class GameScene extends Phaser.Scene {
       const mult = 1 + Math.floor(this.gs.combo / 10) * 0.1;
       this.gs.score += Math.round((this.gs.fever ? base * 2 : base) * mult);
       this.spawnExplosion(e.x, e.y, 0xff8800, 8);
-      this.maybeDropItem(e.x, e.y);
+      // random drop removed as requested
     }
   }
 
