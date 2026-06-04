@@ -249,7 +249,7 @@
             <label>Stay Duration (sec)</label>
             <input type="number" id="stat-stay" step="0.1">
 
-            <button id="btn-reset-global" class="secondary" style="margin-top: 5px; font-size: 0.8rem; padding: 6px;">↺ Reset to Global Default</button>
+            <button id="btn-reset-global" class="secondary" style="margin-top: 5px; font-size: 0.8rem; padding: 6px;">↺ Reset ALL to Global Default</button>
         </div>
 
         <button id="btn-save">💾 Save level.json</button>
@@ -289,6 +289,7 @@
 
 <audio id="audio-player"></audio>
 <input type="file" id="folder-input" webkitdirectory style="display: none;">
+<input type="file" id="global-file-input" accept=".json" style="display: none;">
 
 <script>
     const PX_PER_BEAT = 100; // Base spacing: 100px per Beat
@@ -302,12 +303,6 @@
     const player = document.getElementById('audio-player');
     const playbackLine = document.getElementById('playback-line');
 
-    // Load global enemy defs on start
-    fetch('LevelData/enemies.json')
-        .then(r => r.json())
-        .then(data => { globalEnemyDefs = data; })
-        .catch(e => console.error("Could not load global enemies.json", e));
-
     // UI Tools
     document.querySelectorAll('.tool').forEach(t => {
         t.onclick = () => {
@@ -318,6 +313,30 @@
     });
 
     document.getElementById('btn-open-folder').onclick = () => document.getElementById('folder-input').click();
+
+    // 전역 파일 선택 처리
+    document.getElementById('btn-reset-global').onclick = () => {
+        document.getElementById('global-file-input').click();
+    };
+
+    document.getElementById('global-file-input').onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        try {
+            const text = await file.text();
+            globalEnemyDefs = JSON.parse(text);
+            
+            if (levelData) {
+                // 이 레벨의 모든 적 오버라이드 삭제
+                levelData.enemyStats = {};
+                updateStatPane();
+                alert(`모든 적 설정을 선택한 파일의 전역 기본값으로 되돌렸습니다. (저장 시 반영)`);
+            }
+        } catch (err) {
+            alert("파일을 읽는 중 오류가 발생했습니다: " + err.message);
+        }
+    };
 
     document.getElementById('folder-input').onchange = async (e) => {
         const files = e.target.files;
@@ -378,12 +397,7 @@
     }
 
     document.getElementById('btn-reset-global').onclick = () => {
-        const type = document.getElementById('stat-type').value;
-        if (levelData && levelData.enemyStats && levelData.enemyStats[type]) {
-            delete levelData.enemyStats[type];
-            updateStatPane();
-            alert(`${type} 설정을 전역 기본값으로 되돌렸습니다. (저장 시 반영)`);
-        }
+        document.getElementById('global-file-input').click();
     };
 
     function renderTimeline() {
