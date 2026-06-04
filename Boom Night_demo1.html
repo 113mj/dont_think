@@ -232,8 +232,15 @@ class GameScene extends Phaser.Scene {
     this.player = { x: LANE_XS[2], y: H - 100, vy: 0, w: 20, h: 26, lane: 2 };
     this._playerVisible = true;
 
-    // JSON 웨이브 데이터를 큐로 변환
-    this.waveQueue = level.waves.map(w => [w.time, w.type, w.lane]);
+    // JSON 웨이브 데이터를 큐로 변환 (Beat 기반 -> Time 기반 계산)
+    const beatLen = 60 / (this.config.bpm || 130);
+    const offset  = this.config.offset || 0;
+    this.waveQueue = level.waves.map(w => [
+      w.beat * beatLen + offset, 
+      w.type, 
+      w.lane
+    ]);
+    this.waveQueue.sort((a, b) => a[0] - b[0]);
     this.waveIdx   = 0;
 
     this.bgGfx       = this.add.graphics().setDepth(0);

@@ -44,6 +44,8 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 0.85rem; }
+        .checkbox-group input { width: auto; margin: 0; }
         button {
             background: var(--accent);
             border: none;
@@ -115,7 +117,14 @@
             height: 1px;
             background: #151515;
         }
-        .beat-line.bar { background: #333; }
+        .beat-line.bar { background: #444; height: 2px; }
+        .beat-label {
+            position: absolute;
+            left: -35px;
+            font-size: 10px;
+            color: #666;
+            transform: translateY(-50%);
+        }
         
         .enemy-node {
             position: absolute;
@@ -181,7 +190,6 @@
     <h2>Level Config</h2>
     <div class="section">
         <button id="btn-open-folder">📁 Open Level Folder</button>
-        <p style="font-size: 0.7rem; color: #888;">Select a folder containing level.json and bgm.mp3</p>
     </div>
 
     <div id="edit-pane" style="display: none;">
@@ -194,6 +202,20 @@
             <input type="number" id="cfg-offset" step="0.01" value="0.51">
             <label>Difficulty</label>
             <input type="text" id="cfg-diff" value="★★★">
+        </div>
+
+        <h2>Editor Settings</h2>
+        <div class="section">
+            <div class="checkbox-group">
+                <input type="checkbox" id="snap-enabled" checked>
+                <label for="snap-enabled" style="margin:0;">Snap to Beat</label>
+            </div>
+            <label>Snap Division</label>
+            <select id="snap-division">
+                <option value="1">1/1 (Full Beat)</option>
+                <option value="2">1/2 (8th Note)</option>
+                <option value="4">1/4 (16th Note)</option>
+            </select>
         </div>
 
         <h2>Enemy Stats</h2>
@@ -230,7 +252,6 @@
 
     <div id="timeline-container">
         <div id="timeline">
-            <!-- Lines will be generated via JS -->
             <div id="playback-line"></div>
         </div>
     </div>
@@ -242,19 +263,17 @@
             <div id="progress-fill"></div>
         </div>
         <div style="font-size: 0.8rem;">Zoom: </div>
-        <input type="range" id="zoom-range" min="20" max="200" value="100" style="width: 100px; margin:0;">
+        <input type="range" id="zoom-range" min="10" max="100" value="40" style="width: 100px; margin:0;">
     </div>
 </div>
 
 <audio id="audio-player"></audio>
-<!-- Hidden input for directory selection -->
 <input type="file" id="folder-input" webkitdirectory style="display: none;">
 
 <script>
-    const PX_PER_SEC = 100;
-    let zoom = 1.0;
+    const PX_PER_BEAT = 100; // Base spacing: 100px per Beat
+    let zoom = 0.4;
     let levelData = null;
-    let currentFolderHandle = null;
     let selectedType = 'bat';
 
     const timeline = document.getElementById('timeline');
@@ -271,10 +290,7 @@
         };
     });
 
-    // Folder Loading
-    document.getElementById('btn-open-folder').onclick = () => {
-        document.getElementById('folder-input').click();
-    };
+    document.getElementById('btn-open-folder').onclick = () => document.getElementById('folder-input').click();
 
     document.getElementById('folder-input').onchange = async (e) => {
         const files = e.target.files;
@@ -289,12 +305,21 @@
         if (jsonFile) {
             const text = await jsonFile.text();
             levelData = JSON.parse(text);
+            
+            // Migration: Convert time to beat if necessary
+            if (levelData.waves.length > 0 && levelData.waves[0].time !== undefined) {
+                const bpm = levelData.config.bpm || 130;
+                const offset = levelData.config.offset || 0;
+                levelData.waves.forEach(w => {
+                    w.beat = parseFloat(((w.time - offset) / (60 / bpm)).toFixed(3));
+                    delete w.time;
+                });
+            }
             initEditor();
         }
         if (audioFile) {
             player.src = URL.createObjectURL(audioFile);
         }
-        
         document.getElementById('edit-pane').style.display = 'block';
     };
 
@@ -303,10 +328,12 @@
         document.getElementById('cfg-bpm').value = levelData.config.bpm;
         document.getElementById('cfg-offset').value = levelData.config.offset;
         document.getElementById('cfg-diff').value = levelData.config.difficulty;
-
         updateStatPane();
         renderTimeline();
     }
+
+    document.getElementById('cfg-bpm').onchange = renderTimeline;
+    document.getElementById('cfg-offset').onchange = renderTimeline;
 
     document.getElementById('stat-type').onchange = updateStatPane;
     function updateStatPane() {
@@ -319,14 +346,13 @@
     }
 
     function renderTimeline() {
-        // Clear old stuff
-        const nodes = timeline.querySelectorAll('.enemy-node');
-        nodes.forEach(n => n.remove());
-        const gridLines = timeline.querySelectorAll('.beat-line, .lane-line');
-        gridLines.forEach(l => l.remove());
+        timeline.querySelectorAll('.enemy-node, .beat-line, .lane-line, .beat-label').forEach(n => n.remove());
 
-        const duration = player.duration || 300; // default 5min if no audio
-        const totalHeight = duration * PX_PER_SEC * zoom;
+        const bpm = parseFloat(document.getElementById('cfg-bpm').value) || 120;
+        const duration = player.duration || 300;
+        const totalBeats = (duration * bpm) / 60;
+        
+        const totalHeight = totalBeats * PX_PER_BEAT * zoom;
         timeline.style.height = totalHeight + 'px';
 
         // Draw Lanes
@@ -337,87 +363,85 @@
             timeline.appendChild(l);
         }
 
-        // Draw Beat Lines
-        const bpm = parseFloat(document.getElementById('cfg-bpm').value) || 120;
-        const offset = parseFloat(document.getElementById('cfg-offset').value) || 0;
-        const beatSec = 60 / bpm;
-        for (let t = offset; t < duration; t += beatSec) {
+        // Draw Beats
+        for (let b = 0; b < totalBeats; b += 0.25) {
+            if (b % 1 !== 0 && b % 0.5 !== 0) continue; // Only draw up to 1/2 beat for grid
             const line = document.createElement('div');
             line.className = 'beat-line';
-            const isBar = Math.abs((t - offset) / beatSec % 4) < 0.01;
-            if (isBar) line.classList.add('bar');
-            line.style.top = (t * PX_PER_SEC * zoom) + 'px';
+            if (b % 4 === 0) line.classList.add('bar');
+            line.style.top = (b * PX_PER_BEAT * zoom) + 'px';
             timeline.appendChild(line);
+
+            if (b % 1 === 0) {
+                const label = document.createElement('div');
+                label.className = 'beat-label';
+                label.innerText = b;
+                label.style.top = (b * PX_PER_BEAT * zoom) + 'px';
+                timeline.appendChild(label);
+            }
         }
 
         // Draw Enemies
-        levelData.waves.forEach((w, idx) => {
-            createNode(w, idx);
-        });
+        levelData.waves.forEach((w, idx) => createNode(w, idx));
     }
 
     function createNode(w, idx) {
         const node = document.createElement('div');
         node.className = `enemy-node ${w.type.includes('item') ? 'item' : w.type}`;
-        node.innerText = w.type;
-        node.style.top = (w.time * PX_PER_SEC * zoom) + 'px';
+        node.innerText = w.type === 'boss' ? 'BOSS' : (w.type.includes('item') ? '★' : w.type[0].toUpperCase());
+        node.style.top = (w.beat * PX_PER_BEAT * zoom) + 'px';
         const lane = w.lane < 0 ? 2 : w.lane;
         node.style.left = (lane * 80 + 40) + 'px';
-        node.dataset.idx = idx;
+        node.title = `Beat: ${w.beat}`;
 
         node.oncontextmenu = (e) => {
             e.preventDefault();
             levelData.waves.splice(idx, 1);
             renderTimeline();
         };
-
         timeline.appendChild(node);
     }
 
-    // Timeline Click to place
     timeline.onclick = (e) => {
         if (e.target !== timeline) return;
         const rect = timeline.getBoundingClientRect();
         const y = e.clientY - rect.top;
         const x = e.clientX - rect.left;
         
-        const time = y / (PX_PER_SEC * zoom);
+        let beat = y / (PX_PER_BEAT * zoom);
+        if (document.getElementById('snap-enabled').checked) {
+            const div = parseInt(document.getElementById('snap-division').value);
+            beat = Math.round(beat * div) / div;
+        }
+
         const lane = Math.floor(x / 80);
-        
-        levelData.waves.push({
-            time: parseFloat(time.toFixed(3)),
-            type: selectedType,
-            lane: lane
-        });
-        levelData.waves.sort((a,b) => a.time - b.time);
+        levelData.waves.push({ beat: parseFloat(beat.toFixed(3)), type: selectedType, lane: lane });
+        levelData.waves.sort((a,b) => a.beat - b.beat);
         renderTimeline();
     };
 
-    // Playback
     document.getElementById('btn-play').onclick = () => {
-        if (player.paused) {
-            player.play();
-            document.getElementById('btn-play').innerText = 'Pause';
-        } else {
-            player.pause();
-            document.getElementById('btn-play').innerText = 'Play';
-        }
+        if (player.paused) { player.play(); document.getElementById('btn-play').innerText = 'Pause'; }
+        else { player.pause(); document.getElementById('btn-play').innerText = 'Play'; }
     };
 
     player.ontimeupdate = () => {
         const cur = player.currentTime;
-        const total = player.duration || 0;
+        const total = player.duration || 1;
         document.getElementById('time-display').innerText = formatTime(cur) + ' / ' + formatTime(total);
         document.getElementById('progress-fill').style.width = (cur / total * 100) + '%';
         
-        const y = cur * PX_PER_SEC * zoom;
+        const bpm = parseFloat(document.getElementById('cfg-bpm').value) || 120;
+        const offset = parseFloat(document.getElementById('cfg-offset').value) || 0;
+        const currentBeat = (cur - offset) * (bpm / 60);
+        
+        const y = currentBeat * PX_PER_BEAT * zoom;
         playbackLine.style.top = y + 'px';
         
-        // Auto-scroll
         if (!player.paused) {
             const containerRect = container.getBoundingClientRect();
-            if (y > container.scrollTop + containerRect.height - 100 || y < container.scrollTop) {
-                container.scrollTop = y - 100;
+            if (y > container.scrollTop + containerRect.height - 150 || y < container.scrollTop) {
+                container.scrollTop = y - 150;
             }
         }
     };
@@ -433,15 +457,12 @@
         renderTimeline();
     };
 
-    // Save
     document.getElementById('btn-save').onclick = () => {
-        // Sync config
         levelData.config.name = document.getElementById('cfg-name').value;
         levelData.config.bpm = parseFloat(document.getElementById('cfg-bpm').value);
         levelData.config.offset = parseFloat(document.getElementById('cfg-offset').value);
         levelData.config.difficulty = document.getElementById('cfg-diff').value;
 
-        // Sync current stat type
         const type = document.getElementById('stat-type').value;
         levelData.enemyStats[type].speed = parseInt(document.getElementById('stat-speed').value);
         levelData.enemyStats[type].hp = parseInt(document.getElementById('stat-hp').value);
@@ -454,6 +475,5 @@
         a.click();
     };
 </script>
-
 </body>
 </html>
