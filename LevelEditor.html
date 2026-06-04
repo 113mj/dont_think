@@ -450,8 +450,10 @@
     };
 
     function renderTimeline() {
-        timeline.querySelectorAll('.enemy-node, .beat-line, .lane-line, .beat-label').forEach(n => n.remove());
+        timeline.querySelectorAll('.enemy-node, .beat-line, .lane-line, .beat-label, .path-line').forEach(n => n.remove());
+
         const bpm = parseFloat(document.getElementById('cfg-bpm').value) || 120;
+
         const duration = player.duration || 300;
         const totalBeats = (duration * bpm) / 60;
         timeline.style.height = (totalBeats * PX_PER_BEAT * zoom) + 'px';
