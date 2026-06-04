@@ -496,7 +496,7 @@ class GameScene extends Phaser.Scene {
       const btm = s.beatTimerMultiplier || 2;
       this.enemies.push({ x, y: -28, vy: s.speed * ds, type, lane,
         hp: s.hp, maxHp: s.hp, alive: true, size: 18, shootTimer: 0,
-        settled: false, settleY: 75 + Math.random()*120, exitTimer: 0,
+        settled: false, settleY: 100, exitTimer: 0,
         beatTimer: toNext * btm, beatCount: 0, ds, laneDir: isPoss ? 1 : 0, btm });
     }
   }
@@ -570,7 +570,9 @@ class GameScene extends Phaser.Scene {
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
               vx: 0, vy: (s.bulletSpeed || 205) * (e.ds||1), dmg: 1, alive: true });
           }
-          if (e.exitTimer >= (s.stayDuration || 5)) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
+          // stayDuration을 비트 단위로 계산 (비트수 * 비트간격 = 초)
+          const staySecs = (s.stayDuration || 8) * this.beatInterval;
+          if (e.exitTimer >= staySecs) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
         }
 
       } else if (e.type === 'pskeleton') {
@@ -590,7 +592,8 @@ class GameScene extends Phaser.Scene {
             if (e.lane === 0 || e.lane === 4) e.laneDir *= -1;
             this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 170, ease: 'Cubic.Out' });
           }
-          if (e.exitTimer >= (s.stayDuration || 5.5)) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
+          const staySecs = (s.stayDuration || 8) * this.beatInterval;
+          if (e.exitTimer >= staySecs) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
         }
 
       } else if (e.type === 'boss') {
