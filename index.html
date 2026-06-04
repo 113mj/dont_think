@@ -188,6 +188,7 @@ class GameScene extends Phaser.Scene {
       invincible: false,
       bossActive: false, elapsed: 0,
       combo: 0, maxCombo: 0,
+      lastMoveOnBeat: false,
     };
 
     this.lasers       = [];
@@ -474,7 +475,7 @@ class GameScene extends Phaser.Scene {
     });
 
     // 비트 타이밍 판정 (±100ms 허용)
-    const tolerance = 0.10;
+    const tolerance = 0.15;
     const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
     const phase = bElapsed % this.beatInterval;
     const onBeat = phase <= tolerance || phase >= (this.beatInterval - tolerance);
@@ -482,9 +483,11 @@ class GameScene extends Phaser.Scene {
     if (onBeat) {
       this.gs.combo++;
       if (this.gs.combo > this.gs.maxCombo) this.gs.maxCombo = this.gs.combo;
+      this.gs.lastMoveOnBeat = true;
       this.showBeatJudge(true);
     } else {
       this.gs.combo = 0;
+      this.gs.lastMoveOnBeat = false;
       this.showBeatJudge(false);
     }
   }
@@ -949,37 +952,46 @@ class GameScene extends Phaser.Scene {
       const bEl    = Math.max(0, this.gs.elapsed - this.beatOffset);
       const angle  = (bEl * Math.PI) / this.beatInterval; // 비트마다 sin=0 (중앙)
       const sinPos = Math.sin(angle);
-      const HALF   = 168;   // 커서 이동 범위 ±px
-      const cy     = 21;
+      const HALF   = 190;   // 커서 이동 범위 ±px
+      const cy     = 22;
       const cx     = W / 2;
+      const onBeat = this.gs.lastMoveOnBeat;
+      // 커서 색: 콤보 성공 = 초록, 그 외 = 주황
+      const cursorMain = onBeat ? 0x00ee44 : 0xff8800;
+      const cursorGlow = onBeat ? 0x00ff88 : 0xff6600;
 
-      // 트랙 배경
-      this.beatBarGfx.fillStyle(0x1a0011, 0.85);
-      this.beatBarGfx.fillRoundedRect(cx - HALF - 8, cy - 9, (HALF + 8) * 2, 18, 6);
+      // 트랙 배경 (더 크고 밝게)
+      this.beatBarGfx.fillStyle(0x2a0022, 0.95);
+      this.beatBarGfx.fillRoundedRect(cx - HALF - 12, cy - 13, (HALF + 12) * 2, 26, 8);
+      // 테두리
+      this.beatBarGfx.lineStyle(1.5, 0x882244, 0.8);
+      this.beatBarGfx.strokeRoundedRect(cx - HALF - 12, cy - 13, (HALF + 12) * 2, 26, 8);
 
       // 좌우 끝 마커 (반환점)
       for (const ex of [cx - HALF, cx + HALF]) {
-        this.beatBarGfx.fillStyle(0x552233, 0.7);
-        this.beatBarGfx.fillRect(ex - 1.5, cy - 7, 3, 14);
+        this.beatBarGfx.fillStyle(0xaa4466, 0.9);
+        this.beatBarGfx.fillRect(ex - 2, cy - 10, 4, 20);
       }
 
-      // 중앙 히트존
+      // 중앙 히트존 (더 넓고 밝게)
       const nearCenter = Math.abs(sinPos) < 0.45;
-      this.beatBarGfx.fillStyle(nearCenter ? 0xff4400 : 0x441122, nearCenter ? 0.75 : 0.5);
-      this.beatBarGfx.fillRect(cx - 3, cy - 11, 6, 22);
+      this.beatBarGfx.fillStyle(nearCenter ? 0xff5500 : 0x661133, nearCenter ? 0.9 : 0.6);
+      this.beatBarGfx.fillRect(cx - 5, cy - 14, 10, 28);
       if (nearCenter) {
-        this.beatBarGfx.fillStyle(0xff8800, (0.45 - Math.abs(sinPos)) * 0.8);
-        this.beatBarGfx.fillRect(cx - 10, cy - 13, 20, 26);
+        this.beatBarGfx.fillStyle(0xff9900, (0.45 - Math.abs(sinPos)) * 1.0);
+        this.beatBarGfx.fillRect(cx - 14, cy - 15, 28, 30);
       }
 
-      // 움직이는 커서
+      // 움직이는 커서 (글로우 + 본체 + 하이라이트)
       const cursorX = cx + sinPos * HALF;
-      this.beatBarGfx.fillStyle(0xff6600, 0.28);
-      this.beatBarGfx.fillCircle(cursorX, cy, 11);
-      this.beatBarGfx.fillStyle(0xff8800, 1);
-      this.beatBarGfx.fillCircle(cursorX, cy, 5.5);
-      this.beatBarGfx.fillStyle(0xffffff, 0.85);
-      this.beatBarGfx.fillCircle(cursorX - 1.5, cy - 1.5, 2);
+      this.beatBarGfx.fillStyle(cursorGlow, 0.35);
+      this.beatBarGfx.fillCircle(cursorX, cy, 15);
+      this.beatBarGfx.fillStyle(cursorGlow, 0.18);
+      this.beatBarGfx.fillCircle(cursorX, cy, 20);
+      this.beatBarGfx.fillStyle(cursorMain, 1);
+      this.beatBarGfx.fillCircle(cursorX, cy, 8);
+      this.beatBarGfx.fillStyle(0xffffff, 0.9);
+      this.beatBarGfx.fillCircle(cursorX - 2.5, cy - 2.5, 3);
     }
 
     // 배경
