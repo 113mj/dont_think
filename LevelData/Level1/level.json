@@ -64,10 +64,14 @@
       "lane": 1
     },
     {
-      "beat": 12,
-      "type": "gbat",
-      "lane": 0,
-      "targetLane": 1
+      "beat": 11,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 13,
+      "type": "bat",
+      "lane": 2
     },
     {
       "beat": 14,
@@ -90,20 +94,10 @@
       "lane": 3
     },
     {
-      "beat": 20,
+      "beat": 21,
       "type": "gbat",
       "lane": 3,
-      "targetLane": 2
-    },
-    {
-      "beat": 22,
-      "type": "bat",
-      "lane": 3
-    },
-    {
-      "beat": 23,
-      "type": "bat",
-      "lane": 4
+      "targetLane": 4
     },
     {
       "beat": 24,
@@ -148,11 +142,11 @@
     {
       "beat": 33,
       "type": "gbat",
-      "lane": 3,
-      "targetLane": 4
+      "lane": 4,
+      "targetLane": 3
     },
     {
-      "beat": 34,
+      "beat": 35,
       "type": "gbat",
       "lane": 4,
       "targetLane": 3
@@ -198,27 +192,52 @@
       "lane": 2
     },
     {
-      "beat": 52,
-      "type": "skeleton",
-      "lane": 1
+      "beat": 49,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 51,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 53,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 55,
+      "type": "bat",
+      "lane": 2
     },
     {
       "beat": 56,
-      "type": "skeleton",
+      "type": "bat",
       "lane": 3
     },
     {
-      "beat": 60,
+      "beat": 57,
       "type": "bat",
       "lane": 4
     },
     {
-      "beat": 61,
+      "beat": 58,
       "type": "bat",
       "lane": 3
     },
     {
-      "beat": 62,
+      "beat": 59,
+      "type": "bat",
+      "lane": 4
+    },
+    {
+      "beat": 60,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 61,
       "type": "bat",
       "lane": 4
     },
@@ -290,15 +309,73 @@
     },
     {
       "beat": 79,
-      "type": "gbat",
-      "lane": 2,
-      "targetLane": 3
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 80,
+      "type": "bat",
+      "lane": 3
     },
     {
       "beat": 81,
-      "type": "gbat",
-      "lane": 3,
-      "targetLane": 4
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 82,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 83,
+      "type": "bat",
+      "lane": 4
+    },
+    {
+      "beat": 84,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 85,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 87,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 89,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 91,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 94,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 94,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 95,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 97,
+      "type": "bat",
+      "lane": 2
     },
     {
       "type": "boss",
