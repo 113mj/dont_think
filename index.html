@@ -509,10 +509,15 @@ class GameScene extends Phaser.Scene {
       this.enemies.push({ x, y: -20, vy: s.speed * ds, type, lane,
         hp: s.hp, maxHp: s.hp, alive: true, size: 14, shootTimer: 0 });
     } else if (type === 'gbat') {
-      const btm = s.beatTimerMultiplier || 2;
+      const btm = s.beatTimerMultiplier || 1;
+      const off = s.moveOffset || 0;
+      const currentBeat = bElapsed / this.beatInterval;
+      const nextMoveBeat = Math.ceil((currentBeat - off) / btm) * btm + off;
+      const beatTimer = (nextMoveBeat - currentBeat) * this.beatInterval;
+
       this.enemies.push({ x, y: -25, vy: s.speed * ds, type, lane,
         hp: s.hp, maxHp: s.hp, alive: true, size: 21, shootTimer: 0,
-        beatTimer: toNext, spawnLane: lane, targetLane: targetLane ?? lane, 
+        beatTimer, spawnLane: lane, targetLane: targetLane ?? lane, 
         pingPong: false, btm });
     } else if (type === 'skeleton' || type === 'pskeleton') {
       const isPoss = type === 'pskeleton';
