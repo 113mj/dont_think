@@ -15,21 +15,55 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 const W = 480, H = 720;
 const LANE_XS = [52, 146, 240, 334, 428];
 
-const SONGS = [
-  { key: 'bgm1', file: 'Ghoulish_Groove_1.mp3', name: 'Ghoulish Groove I',
-    bpm: 130, offset: 0.51, difficulty: '★★★',   diffScale: 1.0,  available: true },
-  { key: 'bgm2', file: 'Ghoulish_Groove_2.mp3', name: 'Ghoulish Groove II',
-    bpm: 130, offset: 0.51, difficulty: '★★★★★', diffScale: 1.35, available: true },
-  { key: 'bgm3', file: 'Crimson_Arcade_3.mp3',  name: 'Crimson Arcade',
-    bpm: 130, offset: 0.51, difficulty: '★★★★',  diffScale: 1.18, available: true },
-];
+const GAME_DATA = { levels: [], enemyDefs: {} };
 
 class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
   preload() {
-    SONGS.filter(s => s.available && s.file).forEach(s => this.load.audio(s.key, s.file));
+    this.load.json('manifest', 'LevelData/levels.json');
+    this.load.json('enemyDefs', 'LevelData/enemies.json');
   }
-  create() { this.scene.start('TitleScene'); }
+  create() {
+    const manifest = this.cache.json.get('manifest');
+    GAME_DATA.enemyDefs = this.cache.json.get('enemyDefs') || {};
+    if (manifest) {
+      this.scene.start('LevelPreloadScene', { manifest });
+    } else {
+      console.error('Failed to load level manifest');
+    }
+  }
+}
+
+class LevelPreloadScene extends Phaser.Scene {
+  constructor() { super('LevelPreloadScene'); }
+  init(data) { this.manifest = data.manifest; }
+  preload() {
+    this.manifest.forEach(id => {
+      this.load.json(`data_${id}`, `LevelData/${id}/level.json`);
+    });
+  }
+  create() {
+    this.manifest.forEach(id => {
+      const data = this.cache.json.get(`data_${id}`);
+      if (data) GAME_DATA.levels.push({ id, ...data });
+    });
+    this.scene.start('BgmPreloadScene');
+  }
+}
+
+class BgmPreloadScene extends Phaser.Scene {
+  constructor() { super('BgmPreloadScene'); }
+  preload() {
+    const txt = this.add.text(W/2, H/2, 'Loading Audio...', { fontSize: '18px', color: '#ff8800' }).setOrigin(0.5);
+    GAME_DATA.levels.forEach(lvl => {
+      if (lvl.config.bgmFile) {
+        this.load.audio(`bgm_${lvl.id}`, `LevelData/${lvl.id}/${lvl.config.bgmFile}`);
+      }
+    });
+  }
+  create() {
+    this.scene.start('TitleScene');
+  }
 }
 
 // ─── TitleScene ───────────────────────────────────────────────────────────────
@@ -121,52 +155,37 @@ class SongSelectScene extends Phaser.Scene {
 
     // 곡 카드
     const cardW = W - 60, cardH = 115;
-    SONGS.forEach((song, i) => {
+    GAME_DATA.levels.forEach((lvl, i) => {
+      const song = lvl.config;
       const cardX = W / 2, cardY = 175 + i * 140;
       const bg = this.add.graphics();
 
       const draw = (hover) => {
         bg.clear();
-        if (song.available) {
-          bg.fillStyle(hover ? 0x3a0022 : 0x1e000f, 1);
-          bg.lineStyle(2, hover ? 0xff6600 : 0x882200, 1);
-        } else {
-          bg.fillStyle(0x111118, 0.75);
-          bg.lineStyle(2, 0x333344, 1);
-        }
+        bg.fillStyle(hover ? 0x3a0022 : 0x1e000f, 1);
+        bg.lineStyle(2, hover ? 0xff6600 : 0x882200, 1);
         bg.fillRoundedRect(cardX - cardW/2, cardY - cardH/2, cardW, cardH, 14);
         bg.strokeRoundedRect(cardX - cardW/2, cardY - cardH/2, cardW, cardH, 14);
       };
       draw(false);
 
-      if (song.available) {
-        this.add.text(cardX, cardY - 24, song.name, {
-          fontSize: '22px', fontFamily: 'system-ui', color: '#ffeeaa', fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.add.text(cardX - 70, cardY + 16, `BPM ${song.bpm}`, {
-          fontSize: '13px', fontFamily: 'system-ui', color: '#ff8844'
-        }).setOrigin(0.5);
-        this.add.text(cardX + 70, cardY + 16, song.difficulty, {
-          fontSize: '14px', fontFamily: 'system-ui', color: '#ffcc44'
-        }).setOrigin(0.5);
+      this.add.text(cardX, cardY - 24, song.name, {
+        fontSize: '22px', fontFamily: 'system-ui', color: '#ffeeaa', fontStyle: 'bold'
+      }).setOrigin(0.5);
+      this.add.text(cardX - 70, cardY + 16, `BPM ${song.bpm}`, {
+        fontSize: '13px', fontFamily: 'system-ui', color: '#ff8844'
+      }).setOrigin(0.5);
+      this.add.text(cardX + 70, cardY + 16, song.difficulty, {
+        fontSize: '14px', fontFamily: 'system-ui', color: '#ffcc44'
+      }).setOrigin(0.5);
 
-        const zone = this.add.zone(cardX, cardY, cardW, cardH).setInteractive();
-        zone.on('pointerover',  () => draw(true));
-        zone.on('pointerout',   () => draw(false));
-        zone.on('pointerdown',  () => {
-          this.cameras.main.fade(400, 0,0,0);
-          this.time.delayedCall(400, () => this.scene.start('GameScene', {
-            songKey: song.key, bpm: song.bpm, offset: song.offset, diffScale: song.diffScale,
-          }));
-        });
-      } else {
-        this.add.text(cardX, cardY - 10, '🔒 준비 중', {
-          fontSize: '18px', fontFamily: 'system-ui', color: '#555566'
-        }).setOrigin(0.5);
-        this.add.text(cardX, cardY + 20, 'Coming Soon', {
-          fontSize: '12px', fontFamily: 'system-ui', color: '#444455'
-        }).setOrigin(0.5);
-      }
+      const zone = this.add.zone(cardX, cardY, cardW, cardH).setInteractive();
+      zone.on('pointerover',  () => draw(true));
+      zone.on('pointerout',   () => draw(false));
+      zone.on('pointerdown',  () => {
+        this.cameras.main.fade(400, 0,0,0);
+        this.time.delayedCall(400, () => this.scene.start('GameScene', { levelId: lvl.id }));
+      });
     });
   }
 }
@@ -176,11 +195,29 @@ class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
 
   create(data) {
-    const songData = data || {};
-    this.songKey      = songData.songKey  || 'bgm1';
-    this.beatInterval = 60 / (songData.bpm || 130);
-    this.beatOffset   = songData.offset   || 0.51;
-    this.diffScale    = songData.diffScale || 1.0;
+    const levelId = data.levelId || 'Level1';
+    const level = GAME_DATA.levels.find(l => l.id === levelId);
+    if (!level) {
+      console.error('Level not found:', levelId);
+      this.scene.start('TitleScene');
+      return;
+    }
+
+    this.levelData = level;
+    this.config    = level.config;
+    
+    // 전역 적 정의와 레벨별 오버라이드 병합
+    this.stats = JSON.parse(JSON.stringify(GAME_DATA.enemyDefs || {}));
+    if (level.enemyStats) {
+      for (let type in level.enemyStats) {
+        this.stats[type] = { ...this.stats[type], ...level.enemyStats[type] };
+      }
+    }
+
+    this.songKey      = `bgm_${levelId}`;
+    this.beatInterval = 60 / (this.config.bpm || 130);
+    this.beatOffset   = this.config.offset   || 0.51;
+    this.diffScale    = this.config.diffScale || 1.0;
 
     this.gs = {
       lives: 3, score: 0, bombs: 2,
@@ -204,8 +241,16 @@ class GameScene extends Phaser.Scene {
     this.player = { x: LANE_XS[2], y: H - 100, vy: 0, w: 20, h: 26, lane: 2 };
     this._playerVisible = true;
 
-    const builders = { bgm1: () => this.buildStage1(), bgm2: () => this.buildStage2(), bgm3: () => this.buildStage3() };
-    this.waveQueue = (builders[this.songKey] || builders.bgm1)();
+    // JSON 웨이브 데이터를 큐로 변환 (Beat 기반 -> Time 기반 계산)
+    const beatLen = 60 / (this.config.bpm || 130);
+    const offset  = this.config.offset || 0;
+    this.waveQueue = level.waves.map(w => [
+      w.beat * beatLen + offset, 
+      w.type, 
+      w.lane,
+      w.targetLane // <--- 누락되었던 목표 레인 추가
+    ]);
+    this.waveQueue.sort((a, b) => a[0] - b[0]);
     this.waveIdx   = 0;
 
     this.bgGfx       = this.add.graphics().setDepth(0);
@@ -224,7 +269,7 @@ class GameScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(500);
 
-    // 배경 음악 (로딩 실패 시 게임은 계속 진행)
+    // 배경 음악
     this.bgm = null;
     if (this.cache.audio.exists(this.songKey)) {
       this.sound.stopAll();
@@ -233,125 +278,7 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-  // 스테이지 1 웨이브 데이터 — BPM 130 박자 정렬
-  // beat=0.462s, bar(4beat)=1.846s, 시작 offset=0.51s
-  // 형식: [시간(초), '타입', 레인(0~4, -1=랜덤)]
-  // 타입: 'bat', 'gbat', 'skeleton', 'pskeleton', 'item_bomb', 'item_fever', 'boss'
-  buildStage1() {
-    return [
-      // === 도입부 (bar 1~8): 박쥐 1~2마리씩, 간격 넓게 ===
-      [2.36,  'bat', 2],
-      [5.13,  'bat', 0],
-      [7.89,  'bat', 4],
-      [10.66, 'gbat', 2],
-      [13.43, 'bat', 1],
-      [15.28, 'item_bomb', 2],
 
-      // === 중반 (bar 9~15): 해골 등장 (빈도 줄임) ===
-      [16.20, 'skeleton', 0],
-      [18.05, 'bat', 3],
-      [22.66, 'gbat', 2],
-      [24.51, 'bat', 4],
-      [26.35, 'item_fever', -1],
-
-      // === 중후반 (bar 15~21): 귀신해골 + 박쥐/강화박쥐 혼합 ===
-      [27.28, 'pskeleton', 2],
-      [29.12, 'bat', 0],
-      [32.82, 'gbat', 2],
-      [34.66, 'skeleton', 1],
-      [36.51, 'bat', 3],
-      [37.43, 'item_bomb', -1],
-
-      // === 후반 (bar 21~25): 강화 혼합 ===
-      [38.35, 'bat', 0],
-      [40.20, 'pskeleton', 2],
-      [42.05, 'gbat', 1],
-      [43.89, 'bat', 3],
-      [44.81, 'skeleton', 4],
-
-      // === 보스 (bar 25) ===
-      [46.66, 'boss', 2],
-    ];
-  }
-
-  // Ghoulish Groove II — 박쥐+강화박쥐 중심, Groove I보다 약간 어렵게
-  buildStage2() {
-    return [
-      // === 도입부: 박쥐 쌍 등장 ===
-      [2.36,  'bat', 0],   [2.36,  'bat', 4],
-      [5.13,  'gbat', 2],
-      [7.89,  'bat', 1],   [7.89,  'bat', 3],
-      [10.66, 'gbat', 0],
-      [12.51, 'bat', 4],
-      [14.36, 'item_bomb', 2],
-
-      // === 중반: 해골 등장 (빈도 줄임) ===
-      [16.20, 'skeleton', 1],
-      [18.05, 'gbat', 2],
-      [19.89, 'bat', 0],
-      [23.59, 'gbat', 2],      [23.59, 'bat', 4],
-      [25.43, 'skeleton', 3],
-      [26.35, 'item_fever', -1],
-
-      // === 중후반: 귀신해골 + 강화박쥐 ===
-      [27.28, 'pskeleton', 0],
-      [29.12, 'gbat', 3],
-      [32.82, 'gbat', 2],
-      [34.66, 'pskeleton', 4],
-      [36.51, 'gbat', 0],  [36.51, 'bat', 3],
-      [37.43, 'item_bomb', -1],
-
-      // === 후반: 혼합 공세 ===
-      [38.35, 'skeleton', 3],
-      [40.20, 'gbat', 2],
-      [41.12, 'bat', 0],        [41.12, 'bat', 4],
-      [42.97, 'pskeleton', 2],
-      [44.81, 'gbat', 1],       [44.81, 'bat', 3],
-
-      // === 보스 ===
-      [46.66, 'boss', 2],
-    ];
-  }
-
-  // Crimson Arcade — 어둡고 고딕, 강화박쥐·귀신해골 위주, 초반부터 압박
-  buildStage3() {
-    return [
-      // === 도입부: 강화박쥐로 시작 (무거운 느낌) ===
-      [2.36,  'gbat', 2],
-      [4.20,  'gbat', 0],  [4.20,  'bat', 4],
-      [6.97,  'gbat', 3],
-      [9.74,  'bat', 1],   [9.74,  'bat', 3],
-      [12.51, 'gbat', 2],
-      [14.36, 'item_bomb', 0],
-
-      // === 중반: 귀신해골 이른 등장 (빈도 줄임) ===
-      [15.28, 'pskeleton', 2],
-      [17.12, 'skeleton', 0],
-      [18.97, 'gbat', 2],
-      [22.66, 'skeleton', 3],
-      [24.51, 'gbat', 0],  [24.51, 'bat', 4],
-      [26.35, 'item_fever', -1],
-
-      // === 중후반: 귀신해골+강화박쥐 압박 ===
-      [27.28, 'pskeleton', 0],
-      [29.12, 'gbat', 2],
-      [30.97, 'pskeleton', 3],
-      [32.82, 'gbat', 4],
-      [34.66, 'skeleton', 1],
-      [36.51, 'bat', 0],        [36.51, 'bat', 4],
-      [37.43, 'item_bomb', -1],
-
-      // === 후반: 귀신해골 러시 (쌍 → 단독으로) ===
-      [38.35, 'pskeleton', 1],
-      [40.20, 'gbat', 2],
-      [41.12, 'skeleton', 0],   [41.12, 'bat', 4],
-      [42.97, 'pskeleton', 3],
-      [44.81, 'gbat', 1],       [44.81, 'bat', 3],
-
-      // === 보스 ===
-      [46.66, 'boss', 2],
-    ];
-  }
 
   buildHUD() {
     this.add.rectangle(0, 0, W, 42, 0x000000, 0.72).setOrigin(0).setDepth(10);
@@ -459,17 +386,38 @@ class GameScene extends Phaser.Scene {
     const p = this.player;
     // 이동 후 위치(새 레인)에서 레이저 발사
     const laserX = this.laneXs[p.lane];
-    this.lasers.push({ x: laserX, fromY: p.y - p.h * 0.5, life: 0.22, maxLife: 0.22 });
+    
+    // 가장 가까운 적 찾기 (관통 방지)
+    let targetY = 42; // HUD 하단 (기본 목표점)
+    let hitEnemy = null;
+    let minDiffY = 9999;
 
-    // 같은 레인, 플레이어 위에 있는 적 즉시 타격
     this.enemies.forEach(e => {
       if (!e.alive) return;
-      if (Math.abs(e.x - laserX) < 48 && e.y < p.y) {
-        this.damageEnemy(e, 1);
+      // 같은 레인 판정 (중심 거리 40px 이내)
+      if (Math.abs(e.x - laserX) < 40 && e.y < p.y) {
+        const diffY = p.y - e.y;
+        if (diffY < minDiffY) {
+          minDiffY = diffY;
+          hitEnemy = e;
+        }
       }
     });
 
-    // 비트 타이밍 판정 (±100ms 허용)
+    if (hitEnemy) {
+      this.damageEnemy(hitEnemy, 1);
+      targetY = hitEnemy.y + (hitEnemy.size * 0.5); // 적의 하단부 근처에서 레이저 멈춤
+    }
+
+    this.lasers.push({ 
+      x: laserX, 
+      fromY: p.y - p.h * 0.5, 
+      toY: targetY, 
+      life: 0.22, 
+      maxLife: 0.22 
+    });
+
+    // 비트 타이밍 판정 (±150ms 허용)
     const tolerance = 0.15;
     const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
     const phase = bElapsed % this.beatInterval;
@@ -510,7 +458,7 @@ class GameScene extends Phaser.Scene {
       const mult = 1 + Math.floor(this.gs.combo / 10) * 0.1;
       this.gs.score += Math.round((this.gs.fever ? base * 2 : base) * mult);
       this.spawnExplosion(e.x, e.y, 0xff8800, 8);
-      this.maybeDropItem(e.x, e.y);
+      // random drop removed as requested
     }
   }
 
@@ -535,12 +483,12 @@ class GameScene extends Phaser.Scene {
   processWaves() {
     const t = this.gs.elapsed;
     while (this.waveIdx < this.waveQueue.length && this.waveQueue[this.waveIdx][0] <= t) {
-      const [, type, lane] = this.waveQueue[this.waveIdx++];
+      const [, type, lane, targetLane] = this.waveQueue[this.waveIdx++];
       const l = lane < 0 ? ~~(Math.random()*5) : lane;
       if (type === 'boss') this.spawnBoss();
       else if (type === 'item_bomb')  this.spawnMapItem('bomb',  l);
       else if (type === 'item_fever') this.spawnMapItem('fever', l);
-      else this.spawnEnemy(type, l);
+      else this.spawnEnemy(type, l, targetLane);
     }
   }
 
@@ -549,31 +497,31 @@ class GameScene extends Phaser.Scene {
     this.items.push({ x: this.laneXs[lane], y: -20, vy: 50, type, size: 15, alive: true });
   }
 
-  spawnEnemy(type, lane) {
+  spawnEnemy(type, lane, targetLane) {
     const x = this.laneXs[lane];
-    // 현재 박자 위상 계산 → 다음 비트까지 남은 시간으로 beatTimer 초기화
     const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
     const phase    = bElapsed % this.beatInterval;
     const toNext   = this.beatInterval - phase;
+    const ds       = this.diffScale;
+    const s        = this.stats[type] || { speed: 100, hp: 1 };
 
-    const ds = this.diffScale;
     if (type === 'bat') {
-      this.enemies.push({ x, y: -20, vy: 200 * ds, type, lane,
-        hp: 1, maxHp: 1, alive: true, size: 14, shootTimer: 0 });
+      this.enemies.push({ x, y: -20, vy: s.speed * ds, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 14, shootTimer: 0 });
     } else if (type === 'gbat') {
-      this.enemies.push({ x, y: -25, vy: 130 * ds, type, lane,
-        hp: 3, maxHp: 3, alive: true, size: 21, shootTimer: 0,
-        beatTimer: toNext, beatLaneDir: (Math.random()<0.5 ? 1 : -1) });
-    } else if (type === 'skeleton') {
-      this.enemies.push({ x, y: -28, vy: 68 * ds, type, lane,
-        hp: 5, maxHp: 5, alive: true, size: 18, shootTimer: 0,
-        settled: false, settleY: 75 + Math.random()*120, exitTimer: 0,
-        beatTimer: toNext * 2, beatCount: 0, ds });
-    } else if (type === 'pskeleton') {
-      this.enemies.push({ x, y: -28, vy: 68 * ds, type, lane,
-        hp: 5, maxHp: 5, alive: true, size: 18, shootTimer: 0,
-        settled: false, settleY: 75 + Math.random()*120, exitTimer: 0,
-        beatTimer: toNext * 2, beatCount: 0, laneDir: 1, ds });
+      const btm = s.beatTimerMultiplier || 2;
+      this.enemies.push({ x, y: -25, vy: s.speed * ds, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 21, shootTimer: 0,
+        beatTimer: toNext, spawnLane: lane, targetLane: targetLane ?? lane, 
+        pingPong: false, btm });
+    } else if (type === 'skeleton' || type === 'pskeleton') {
+      const isPoss = type === 'pskeleton';
+      const btm = s.beatTimerMultiplier || 2;
+      this.enemies.push({ x, y: -28, vy: s.speed * ds, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 18, shootTimer: 0,
+        settled: false, settleY: 100, exitTimer: 0,
+        spawnLane: lane, targetLane: targetLane ?? lane, pingPong: false,
+        beatTimer: toNext * btm, beatCount: 0, ds, laneDir: isPoss ? 1 : 0, btm });
     }
   }
 
@@ -620,52 +568,88 @@ class GameScene extends Phaser.Scene {
         if (e.y > H + 30) e.alive = false;
 
       } else if (e.type === 'gbat') {
-        // 강화 돌진형: 느리게 낙하하면서 2비트마다 레인 이동
+        // 강화 돌진형: 지정된 두 레인 사이를 박자마다 번갈아 이동
+        const s = this.stats[e.type] || {};
         e.y += e.vy * dt;
         e.beatTimer -= dt;
         if (e.beatTimer <= 0) {
-          e.beatTimer += this.beatInterval * 2;
-          e.lane = Phaser.Math.Clamp(e.lane + e.beatLaneDir, 0, 4);
-          if (e.lane === 0 || e.lane === 4) e.beatLaneDir *= -1;
+          e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
+          e.pingPong = !e.pingPong;
+          e.lane = e.pingPong ? e.targetLane : e.spawnLane;
           this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 120, ease: 'Cubic.Out' });
         }
         if (e.y > H + 30) e.alive = false;
 
       } else if (e.type === 'skeleton') {
+        const s = this.stats[e.type] || {};
         if (!e.settled) {
           e.y += e.vy * dt;
-          if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
+          if (e.y >= e.settleY) {
+            e.y = e.settleY;
+            e.settled = true;
+            const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
+            const syncUnit = this.beatInterval / 2;
+            const phase    = bElapsed % syncUnit;
+            const toNext   = syncUnit - phase;
+            e.beatTimer    = toNext; 
+          }
+        } else if (e.exiting) {
+          // [퇴장 모드] 위로 이동만 수행, 사격 중지
+          e.y -= 90 * dt;
+          if (e.y < -40) e.alive = false;
         } else {
+          // [대기/공격 모드]
           e.exitTimer += dt;
           e.beatTimer -= dt;
           if (e.beatTimer <= 0) {
-            // 2비트마다 사격 (제자리 고정)
-            e.beatTimer += this.beatInterval * 2;
+            e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
             e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
-              vx: 0, vy: 205 * (e.ds||1), dmg: 1, alive: true });
+              vx: 0, vy: (s.bulletSpeed || 205) * (e.ds||1), dmg: 1, alive: true });
+            
+            // 박자 단위 머무는 시간이 지났다면, 이번 사격을 끝으로 퇴장 모드 전환
+            const staySecs = (s.stayDuration || 8) * this.beatInterval;
+            if (e.exitTimer >= staySecs) {
+              e.exiting = true;
+            }
           }
-          if (e.exitTimer >= 5) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
         }
 
       } else if (e.type === 'pskeleton') {
+        const s = this.stats[e.type] || {};
         if (!e.settled) {
           e.y += e.vy * dt;
-          if (e.y >= e.settleY) { e.y = e.settleY; e.settled = true; }
+          if (e.y >= e.settleY) {
+            e.y = e.settleY;
+            e.settled = true;
+            const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
+            const syncUnit = this.beatInterval / 2;
+            const phase    = bElapsed % syncUnit;
+            const toNext   = syncUnit - phase;
+            e.beatTimer    = toNext;
+          }
+        } else if (e.exiting) {
+          e.y -= 90 * dt;
+          if (e.y < -40) e.alive = false;
         } else {
           e.exitTimer += dt;
           e.beatTimer -= dt;
           if (e.beatTimer <= 0) {
-            // 2비트마다 사격 + 레인 이동
-            e.beatTimer += this.beatInterval * 2;
+            e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
             e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
-              vx: 0, vy: 200 * (e.ds||1), dmg: 1, alive: true });
-            e.lane = Phaser.Math.Clamp(e.lane + e.laneDir, 0, 4);
-            if (e.lane === 0 || e.lane === 4) e.laneDir *= -1;
+              vx: 0, vy: (s.bulletSpeed || 200) * (e.ds||1), dmg: 1, alive: true });
+
+            // 지정된 두 레인 사이를 번갈아 이동
+            e.pingPong = !e.pingPong;
+            e.lane = e.pingPong ? e.targetLane : e.spawnLane;
             this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 170, ease: 'Cubic.Out' });
+
+            const staySecs = (s.stayDuration || 8) * this.beatInterval;
+            if (e.exitTimer >= staySecs) {
+              e.exiting = true;
+            }
           }
-          if (e.exitTimer >= 5.5) { e.y -= 90 * dt; if (e.y < -40) e.alive = false; }
         }
 
       } else if (e.type === 'boss') {
@@ -1165,23 +1149,24 @@ class GameScene extends Phaser.Scene {
     this.laserGfx.clear();
     this.lasers.forEach(l => {
       const a = l.life / l.maxLife;
+      const endY = l.toY || 42;
       // 외곽 글로우
       this.laserGfx.lineStyle(10, 0xcc44ff, a * 0.25);
       this.laserGfx.beginPath();
       this.laserGfx.moveTo(l.x, l.fromY);
-      this.laserGfx.lineTo(l.x, 42);
+      this.laserGfx.lineTo(l.x, endY);
       this.laserGfx.strokePath();
       // 중간 빔
       this.laserGfx.lineStyle(4, 0xff88ff, a * 0.7);
       this.laserGfx.beginPath();
       this.laserGfx.moveTo(l.x, l.fromY);
-      this.laserGfx.lineTo(l.x, 42);
+      this.laserGfx.lineTo(l.x, endY);
       this.laserGfx.strokePath();
       // 코어 (흰색)
       this.laserGfx.lineStyle(1.5, 0xffffff, a);
       this.laserGfx.beginPath();
       this.laserGfx.moveTo(l.x, l.fromY);
-      this.laserGfx.lineTo(l.x, 42);
+      this.laserGfx.lineTo(l.x, endY);
       this.laserGfx.strokePath();
     });
 
@@ -1286,7 +1271,7 @@ new Phaser.Game({
   resolution: window.devicePixelRatio || 1,
   render: { antialias: true, roundPixels: false },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [BootScene, TitleScene, SongSelectScene, GameScene, ClearScene, GameOverScene],
+  scene: [BootScene, LevelPreloadScene, BgmPreloadScene, TitleScene, SongSelectScene, GameScene, ClearScene, GameOverScene],
   backgroundColor: '#000000',
 });
 </script>
