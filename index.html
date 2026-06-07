@@ -42,14 +42,19 @@ class LevelPreloadScene extends Phaser.Scene {
   constructor() { super('LevelPreloadScene'); }
   init(data) { this.manifest = data.manifest; }
   preload() {
+    const v = Date.now();
     this.manifest.forEach(id => {
-      this.load.json(`data_${id}`, `LevelData/${id}/level.json`);
+      this.load.json(`data_${id}`, `LevelData/${id}/level.json?v=${v}`);
     });
   }
   create() {
+    GAME_DATA.levels = []; // 이전 데이터 초기화
     this.manifest.forEach(id => {
       const data = this.cache.json.get(`data_${id}`);
-      if (data) GAME_DATA.levels.push({ id, ...data });
+      if (data) {
+        console.log(`Loaded Level: ${id}`, data);
+        GAME_DATA.levels.push({ id, ...data });
+      }
     });
     this.scene.start('BgmPreloadScene');
   }
@@ -1312,15 +1317,6 @@ new Phaser.Game({
   width: W, height: H,
   parent: 'game-container',
   resolution: window.devicePixelRatio || 1,
-  render: { antialias: true, roundPixels: false },
-  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [BootScene, LevelPreloadScene, BgmPreloadScene, TitleScene, SongSelectScene, GameScene, ClearScene, GameOverScene],
-  backgroundColor: '#000000',
-});
-</script>
-</body>
-</html>
-evicePixelRatio || 1,
   render: { antialias: true, roundPixels: false },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   scene: [BootScene, LevelPreloadScene, BgmPreloadScene, TitleScene, SongSelectScene, GameScene, ClearScene, GameOverScene],

@@ -6,8 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="2ea249fd-789f-46aa-a5e2-d87e6a8ba55b" name="변경" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LevelData/Level2/level.json" beforeDir="false" afterPath="$PROJECT_DIR$/LevelData/Level2/level.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/LevelData/Level3/level.json" beforeDir="false" afterPath="$PROJECT_DIR$/LevelData/Level3/level.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LevelData/enemies.json" beforeDir="false" afterPath="$PROJECT_DIR$/LevelData/enemies.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,7 +50,7 @@
       <option name="presentableId" value="Default" />
       <updated>1780624691255</updated>
       <workItem from="1780624691256" duration="3251000" />
-      <workItem from="1780841930274" duration="3837000" />
+      <workItem from="1780841930274" duration="6170000" />
     </task>
     <servers />
   </component>
