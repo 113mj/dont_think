@@ -187,8 +187,13 @@
       "lane": 0
     },
     {
-      "beat": 48,
-      "type": "skeleton",
+      "beat": 46,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 47,
+      "type": "bat",
       "lane": 2
     },
     {
