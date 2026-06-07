@@ -571,7 +571,7 @@ class GameScene extends Phaser.Scene {
 
     if (type === 'bat') {
       this.enemies.push({ x, y: -30, vy: s.speed * S, type, lane,
-        hp: s.hp, maxHp: s.hp, alive: true, size: 21, shootTimer: 0 });
+        hp: s.hp, maxHp: s.hp, alive: true, size: s.size || 21, shootTimer: 0 });
     } else if (type === 'bigbone') {
       const lane2 = Math.min(lane + 1, 4);
       const midX = (this.laneXs[lane] + this.laneXs[lane2]) / 2;
@@ -903,11 +903,11 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-  spawnHitParticles(x, y) {
+  spawnHitParticles(x, y, color = 0xffffff) {
     for (let i = 0; i < 4; i++) {
       const ang = Math.random()*Math.PI*2;
-      this.particles.push({ x, y, vx: Math.cos(ang)*150, vy: Math.sin(ang)*150,
-        life: 0.22, maxLife: 0.22, color: 0xffffff, size: 3.5 });
+      this.particles.push({ x, y, vx: Math.cos(ang)*120, vy: Math.sin(ang)*120,
+        life: 0.18, maxLife: 0.18, color: color, size: 2.5 });
     }
   }
 

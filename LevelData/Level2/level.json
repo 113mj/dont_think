@@ -7,50 +7,348 @@
     "difficulty": "★★★★★",
     "bgmFile": "bgm.mp3"
   },
-  "enemyStats": {
-    "bat": {
-      "speed": 0,
-      "hp": 0,
-      "bulletSpeed": 0,
-      "beatTimerMultiplier": 0,
-      "stayDuration": 0
-    },
-    "gbat": {
-      "speed": 130,
-      "hp": 3,
-      "beatTimerMultiplier": 2
-    },
-    "skeleton": {
-      "speed": 68,
-      "hp": 5,
-      "shootTimerMultiplier": 2
-    },
-    "pskeleton": {
-      "speed": 68,
-      "hp": 5,
-      "shootTimerMultiplier": 2
-    },
-    "boss": {
-      "hp": 80
-    }
-  },
   "waves": [
     {
+      "beat": 0,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 1,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 2,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 3,
+      "type": "bat",
+      "lane": 2
+    },
+    {
       "beat": 4,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 5,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 6,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 7,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 8,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 9,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 10,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 12,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 13,
+      "type": "item_fever",
+      "lane": 1
+    },
+    {
+      "beat": 14,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 16,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 18,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 21,
       "type": "bigbone",
+      "lane": 3,
+      "targetLane": 0
+    },
+    {
+      "beat": 22,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 23,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 24,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 25,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 26,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 29,
+      "type": "bigbone",
+      "lane": 0,
+      "targetLane": 1
+    },
+    {
+      "beat": 30,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 32,
+      "type": "bat",
+      "lane": 4
+    },
+    {
+      "beat": 34,
+      "type": "bigbone",
+      "lane": 3,
+      "targetLane": 0
+    },
+    {
+      "beat": 35,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 36,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 37,
+      "type": "bat",
+      "lane": 0
+    },
+    {
+      "beat": 42,
+      "type": "bigbone",
+      "lane": 0,
+      "targetLane": 1
+    },
+    {
+      "beat": 43,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 44,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 45,
+      "type": "bat",
+      "lane": 4
+    },
+    {
+      "beat": 46,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 47,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 50,
+      "type": "bigbone",
+      "lane": 0,
+      "targetLane": 1
+    },
+    {
+      "beat": 52,
+      "type": "bigbone",
+      "lane": 3,
+      "targetLane": 0
+    },
+    {
+      "beat": 54,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 55,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 56,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 57,
+      "type": "bat",
+      "lane": 0
+    },
+    {
+      "beat": 59,
+      "type": "gbat",
       "lane": 2,
       "targetLane": 1
     },
     {
-      "beat": 5,
-      "type": "bigbone",
-      "lane": 3,
-      "targetLane": 1
+      "beat": 62,
+      "type": "bat",
+      "lane": 0
     },
     {
-      "beat": 6,
+      "beat": 64,
+      "type": "bat",
+      "lane": 0
+    },
+    {
+      "beat": 65,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 66,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 67,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 68,
+      "type": "bat",
+      "lane": 4
+    },
+    {
+      "beat": 69,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 70,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 71,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 72,
+      "type": "bat",
+      "lane": 0
+    },
+    {
+      "beat": 74,
+      "type": "gbat",
+      "lane": 1,
+      "targetLane": 2
+    },
+    {
+      "beat": 76,
+      "type": "gbat",
+      "lane": 3,
+      "targetLane": 4
+    },
+    {
+      "beat": 78,
+      "type": "gbat",
+      "lane": 3,
+      "targetLane": 2
+    },
+    {
+      "beat": 80,
+      "type": "gbat",
+      "lane": 1,
+      "targetLane": 0
+    },
+    {
+      "beat": 82,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 83,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 84,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 85,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 87,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 88,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 89,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 90,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 95,
       "type": "bigbone",
       "lane": 1,
+      "targetLane": 0
+    },
+    {
+      "beat": 98,
+      "type": "bigbone",
+      "lane": 2,
       "targetLane": 1
     },
     {

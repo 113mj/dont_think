@@ -28,7 +28,7 @@
     "stayDuration": 8
   },
   "bigbone": {
-    "speed": 150,
+    "speed": 200,
     "hp": 3,
     "size": 80
   },
