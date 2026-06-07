@@ -36,29 +36,22 @@
   },
   "waves": [
     {
-      "beat": 3,
-      "type": "bigbone",
-      "lane": 0
-    },
-    {
       "beat": 4,
       "type": "bigbone",
-      "lane": 2
+      "lane": 2,
+      "targetLane": 1
     },
     {
       "beat": 5,
       "type": "bigbone",
-      "lane": 3
+      "lane": 3,
+      "targetLane": 1
     },
     {
-      "beat": 7,
+      "beat": 6,
       "type": "bigbone",
-      "lane": 1
-    },
-    {
-      "beat": 9,
-      "type": "bigbone",
-      "lane": 0
+      "lane": 1,
+      "targetLane": 1
     },
     {
       "type": "boss",

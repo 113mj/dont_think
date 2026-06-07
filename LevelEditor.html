@@ -323,8 +323,16 @@
             document.querySelectorAll('.tool').forEach(x => x.classList.remove('active'));
             t.classList.add('active');
             selectedType = t.dataset.type;
-            const needsTarget = (selectedType === 'gbat' || selectedType === 'pskeleton');
-            document.getElementById('lane-select-container').style.display = needsTarget ? 'flex' : 'none';
+            const needsTarget = (selectedType === 'gbat' || selectedType === 'pskeleton' || selectedType === 'bigbone');
+            const cont = document.getElementById('lane-select-container');
+            cont.style.display = needsTarget ? 'flex' : 'none';
+            
+            const label = cont.querySelector('span');
+            if (selectedType === 'bigbone') {
+                label.innerText = "Initial Head:";
+            } else {
+                label.innerText = "Move Direction:";
+            }
         };
     });
 
@@ -547,6 +555,9 @@
             const dir = document.getElementById('move-dir-select').value;
             let targetL = (dir === 'left') ? ((lane === 0) ? 1 : lane - 1) : ((lane === 4) ? 3 : lane + 1);
             newData.targetLane = targetL;
+        } else if (selectedType === 'bigbone') {
+            const dir = document.getElementById('move-dir-select').value;
+            newData.targetLane = (dir === 'left' ? 0 : 1);
         }
         levelData.waves.push(newData);
         levelData.waves.sort((a,b) => a.beat - b.beat);
@@ -588,6 +599,4 @@
     };
 </script>
 </body>
-</html>
-dy>
 </html>
