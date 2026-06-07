@@ -608,7 +608,7 @@ class GameScene extends Phaser.Scene {
   spawnBoss() {
     if (this.gs.bossActive) return;
     this.gs.bossActive = true;
-    const hp = 80;
+    const hp = 30;
     this.boss = {
       x: W/2, y: -105, vy: 98, lane: 2,
       hp, maxHp: hp, type: 'boss',
