@@ -2,9 +2,9 @@
   "config": {
     "name": "Ghoulish Groove II",
     "bpm": 130,
-    "offset": 0.51,
+    "offset": 0.50,
     "diffScale": 1.35,
-    "difficulty": "★★★★★",
+    "difficulty": "★★★★",
     "bgmFile": "bgm.mp3"
   },
   "waves": [
