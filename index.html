@@ -557,8 +557,10 @@ class GameScene extends Phaser.Scene {
       this.enemies.push({ x, y: -30, vy: s.speed * S, type, lane,
         hp: s.hp, maxHp: s.hp, alive: true, size: 21, shootTimer: 0 });
     } else if (type === 'bigbone') {
-      this.enemies.push({ x, y: -50, vy: s.speed * S, type, lane,
-        hp: s.hp, maxHp: s.hp, alive: true, size: 70, shootTimer: 0 });
+      const lane2 = Math.min(lane + 1, 4);
+      const midX = (this.laneXs[lane] + this.laneXs[lane2]) / 2;
+      this.enemies.push({ x: midX, y: -50, vy: s.speed * S, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 80, shootTimer: 0 });
     } else if (type === 'gbat') {
       const btm = s.beatTimerMultiplier || 1;
       const off = s.moveOffset || 0;

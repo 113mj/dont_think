@@ -9,8 +9,11 @@
   },
   "enemyStats": {
     "bat": {
-      "speed": 200,
-      "hp": 1
+      "speed": 0,
+      "hp": 0,
+      "bulletSpeed": 0,
+      "beatTimerMultiplier": 0,
+      "stayDuration": 0
     },
     "gbat": {
       "speed": 130,
@@ -33,149 +36,29 @@
   },
   "waves": [
     {
-      "type": "bat",
-      "lane": 0,
-      "beat": 4
+      "beat": 3,
+      "type": "bigbone",
+      "lane": 0
     },
     {
-      "type": "bat",
-      "lane": 4,
-      "beat": 4
+      "beat": 4,
+      "type": "bigbone",
+      "lane": 2
     },
     {
-      "type": "gbat",
-      "lane": 2,
-      "beat": 10
+      "beat": 5,
+      "type": "bigbone",
+      "lane": 3
     },
     {
-      "type": "bat",
-      "lane": 1,
-      "beat": 16
+      "beat": 7,
+      "type": "bigbone",
+      "lane": 1
     },
     {
-      "type": "bat",
-      "lane": 3,
-      "beat": 16
-    },
-    {
-      "type": "gbat",
-      "lane": 0,
-      "beat": 22
-    },
-    {
-      "type": "bat",
-      "lane": 4,
-      "beat": 26
-    },
-    {
-      "type": "item_bomb",
-      "lane": 2,
-      "beat": 30
-    },
-    {
-      "type": "skeleton",
-      "lane": 1,
-      "beat": 34
-    },
-    {
-      "type": "gbat",
-      "lane": 2,
-      "beat": 38
-    },
-    {
-      "type": "bat",
-      "lane": 0,
-      "beat": 42
-    },
-    {
-      "type": "gbat",
-      "lane": 2,
-      "beat": 50
-    },
-    {
-      "type": "bat",
-      "lane": 4,
-      "beat": 50
-    },
-    {
-      "type": "skeleton",
-      "lane": 3,
-      "beat": 54
-    },
-    {
-      "type": "item_fever",
-      "lane": -1,
-      "beat": 56
-    },
-    {
-      "type": "pskeleton",
-      "lane": 0,
-      "beat": 58
-    },
-    {
-      "type": "gbat",
-      "lane": 3,
-      "beat": 62
-    },
-    {
-      "type": "gbat",
-      "lane": 2,
-      "beat": 70
-    },
-    {
-      "type": "pskeleton",
-      "lane": 4,
-      "beat": 74
-    },
-    {
-      "type": "gbat",
-      "lane": 0,
-      "beat": 78
-    },
-    {
-      "type": "bat",
-      "lane": 3,
-      "beat": 78
-    },
-    {
-      "type": "item_bomb",
-      "lane": -1,
-      "beat": 80
-    },
-    {
-      "type": "skeleton",
-      "lane": 3,
-      "beat": 82
-    },
-    {
-      "type": "gbat",
-      "lane": 2,
-      "beat": 86
-    },
-    {
-      "type": "bat",
-      "lane": 0,
-      "beat": 88
-    },
-    {
-      "type": "bat",
-      "lane": 4,
-      "beat": 88
-    },
-    {
-      "type": "pskeleton",
-      "lane": 2,
-      "beat": 92
-    },
-    {
-      "type": "gbat",
-      "lane": 1,
-      "beat": 96
-    },
-    {
-      "type": "bat",
-      "lane": 3,
-      "beat": 96
+      "beat": 9,
+      "type": "bigbone",
+      "lane": 0
     },
     {
       "type": "boss",

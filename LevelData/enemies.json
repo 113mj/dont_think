@@ -30,7 +30,7 @@
   "bigbone": {
     "speed": 150,
     "hp": 3,
-    "size": 70
+    "size": 80
   },
   "boss": {
     "hp": 80,

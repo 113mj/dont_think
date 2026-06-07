@@ -266,6 +266,7 @@
         <div class="tool" data-type="gbat">G-Bat</div>
         <div class="tool" data-type="skeleton">Skel</div>
         <div class="tool" data-type="pskeleton">P-Skel</div>
+        <div class="tool" data-type="bigbone">BigBone</div>
         <div class="tool" data-type="item_bomb">Bomb</div>
         <div class="tool" data-type="item_fever">Fever</div>
         <div class="tool" data-type="boss">BOSS</div>
@@ -485,10 +486,17 @@
     function createNode(w, idx) {
         const node = document.createElement('div');
         node.className = `enemy-node ${w.type.includes('item') ? 'item' : w.type}`;
-        node.innerText = w.type === 'boss' ? 'BOSS' : (w.type.includes('item') ? '★' : w.type[0].toUpperCase());
+        node.innerText = w.type === 'boss' ? 'BOSS' : (w.type === 'bigbone' ? 'BIG BONE' : (w.type.includes('item') ? '★' : w.type[0].toUpperCase()));
         node.style.top = (w.beat * PX_PER_BEAT * zoom) + 'px';
-        const lane = w.lane < 0 ? 2 : w.lane;
-        node.style.left = (lane * 80 + 40) + 'px';
+        
+        let lane = w.lane < 0 ? 2 : w.lane;
+        if (w.type === 'bigbone') {
+            if (lane > 3) lane = 3;
+            node.style.left = (lane * 80 + 80) + 'px';
+        } else {
+            node.style.left = (lane * 80 + 40) + 'px';
+        }
+        
         node.title = `Beat: ${w.beat}${w.targetLane !== undefined ? ' -> Lane ' + (w.targetLane+1) : ''}`;
 
         if (w.targetLane !== undefined && w.targetLane !== w.lane) {
@@ -531,7 +539,10 @@
             beat = Math.round(beat * div) / div;
         }
         const lane = Math.floor(x / 80);
-        const newData = { beat: parseFloat(beat.toFixed(3)), type: selectedType, lane: lane };
+        let finalLane = lane;
+        if (selectedType === 'bigbone' && finalLane > 3) finalLane = 3;
+
+        const newData = { beat: parseFloat(beat.toFixed(3)), type: selectedType, lane: finalLane };
         if (selectedType === 'gbat' || selectedType === 'pskeleton') {
             const dir = document.getElementById('move-dir-select').value;
             let targetL = (dir === 'left') ? ((lane === 0) ? 1 : lane - 1) : ((lane === 4) ? 3 : lane + 1);
@@ -577,4 +588,6 @@
     };
 </script>
 </body>
+</html>
+dy>
 </html>
