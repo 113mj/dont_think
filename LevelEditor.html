@@ -252,8 +252,12 @@
             <label>Beat Multiplier (2 = 2 beats)</label>
             <input type="number" id="stat-beat-mult" step="0.5">
 
-            <label>Stay Duration (beats)</label>
+            <label>Stay Duration (Beats)</label>
             <input type="number" id="stat-stay" step="0.5">
+            <label>Beat Offset (Beats)</label>
+            <input type="number" id="stat-offset" step="0.25" value="0">
+            <label>Beat Offset (Beats)</label>
+            <input type="number" id="stat-offset" step="0.25" value="0">
         </div>
 
         <button id="btn-save">💾 Save level.json</button>
@@ -370,11 +374,17 @@
 
     function updateStatPane() {
         const isCustom = document.getElementById('use-custom-stats').checked;
-        const inputs = ['stat-speed', 'stat-hp', 'stat-bullet-speed', 'stat-beat-mult', 'stat-stay'];
-        inputs.forEach(id => document.getElementById(id).disabled = !isCustom);
+        const inputs = ['stat-speed', 'stat-hp', 'stat-bullet-speed', 'stat-beat-mult', 'stat-stay', 'stat-offset'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = !isCustom;
+        });
 
         if (!globalEnemyDefs) {
-            inputs.forEach(id => document.getElementById(id).value = 0);
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = 0;
+            });
             return;
         }
 
@@ -388,6 +398,7 @@
         document.getElementById('stat-bullet-speed').value = s.bulletSpeed !== undefined ? s.bulletSpeed : (g.bulletSpeed || 0);
         document.getElementById('stat-beat-mult').value    = s.beatTimerMultiplier !== undefined ? s.beatTimerMultiplier : (g.beatTimerMultiplier || 0);
         document.getElementById('stat-stay').value        = s.stayDuration !== undefined ? s.stayDuration : (g.stayDuration || 0);
+        document.getElementById('stat-offset').value      = s.beatOffset !== undefined ? s.beatOffset : (g.beatOffset || 0);
     }
 
     document.getElementById('folder-input').onchange = async (e) => {

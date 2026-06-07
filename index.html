@@ -669,7 +669,8 @@ class GameScene extends Phaser.Scene {
             const syncUnit = this.beatInterval / 2;
             const phase    = bElapsed % syncUnit;
             const toNext   = syncUnit - phase;
-            e.beatTimer    = toNext;
+            const offSecs = (s.beatOffset || 0) * this.beatInterval;
+            e.beatTimer    = toNext + offSecs;
           }
         } else if (e.exiting) {
           e.y -= 135 * dt;
@@ -701,7 +702,8 @@ class GameScene extends Phaser.Scene {
             const syncUnit = this.beatInterval / 2;
             const phase    = bElapsed % syncUnit;
             const toNext   = syncUnit - phase;
-            e.beatTimer    = toNext;
+            const offSecs = (s.beatOffset || 0) * this.beatInterval;
+            e.beatTimer    = toNext + offSecs;
           }
         } else if (e.exiting) {
           e.y -= 135 * dt;

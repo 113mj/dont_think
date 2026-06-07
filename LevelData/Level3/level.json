@@ -2,21 +2,21 @@
   "config": {
     "name": "Crimson Arcade",
     "bpm": 130,
-    "offset": 0.50,
+    "offset": 0.5,
     "diffScale": 1.18,
     "difficulty": "★★★★★",
     "bgmFile": "bgm.mp3"
   },
   "waves": [
     {
-      "beat": 0,
+      "beat": 4,
       "type": "bat",
-      "lane": 2
+      "lane": 1
     },
     {
-      "beat": 2,
+      "beat": 4,
       "type": "bat",
-      "lane": 2
+      "lane": 3
     },
     {
       "beat": 4,
@@ -24,39 +24,258 @@
       "lane": 2
     },
     {
-      "beat": 8,
+      "beat": 6,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 6,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 6,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 12,
       "type": "skeleton",
       "lane": 2
     },
     {
-      "beat": 9,
+      "beat": 14,
       "type": "bat",
       "lane": 1
     },
     {
-      "beat": 11,
+      "beat": 16,
       "type": "bat",
       "lane": 3
     },
     {
-      "beat": 13,
+      "beat": 18,
       "type": "bat",
       "lane": 1
     },
     {
-      "beat": 15,
+      "beat": 20,
       "type": "bat",
       "lane": 3
     },
     {
-      "beat": 17,
+      "beat": 22,
       "type": "bat",
       "lane": 1
     },
     {
-      "type": "boss",
+      "beat": 23,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 24,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 28,
+      "type": "skeleton",
+      "lane": 2
+    },
+    {
+      "beat": 29,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 31,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 33,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 35,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 36,
+      "type": "gbat",
+      "lane": 1,
+      "targetLane": 2
+    },
+    {
+      "beat": 39,
+      "type": "skeleton",
+      "lane": 3
+    },
+    {
+      "beat": 42,
+      "type": "skeleton",
+      "lane": 2
+    },
+    {
+      "beat": 44,
+      "type": "bat",
+      "lane": 3
+    },
+    {
+      "beat": 45,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 51,
+      "type": "bat",
+      "lane": 0
+    },
+    {
+      "beat": 52,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 53,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 55,
+      "type": "gbat",
+      "lane": 3,
+      "targetLane": 4
+    },
+    {
+      "beat": 57,
+      "type": "gbat",
+      "lane": 3,
+      "targetLane": 2
+    },
+    {
+      "beat": 59,
+      "type": "bat",
+      "lane": 0
+    },
+    {
+      "beat": 60,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 61,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 64,
+      "type": "bigbone",
       "lane": 2,
-      "beat": 100
+      "targetLane": 1
+    },
+    {
+      "beat": 66,
+      "type": "skeleton",
+      "lane": 0
+    },
+    {
+      "beat": 67,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 68,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 69,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 71,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 72,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 73,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 75,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 76,
+      "type": "bat",
+      "lane": 2
+    },
+    {
+      "beat": 77,
+      "type": "bat",
+      "lane": 1
+    },
+    {
+      "beat": 81,
+      "type": "gbat",
+      "lane": 1,
+      "targetLane": 2
+    },
+    {
+      "beat": 82,
+      "type": "gbat",
+      "lane": 1,
+      "targetLane": 2
+    },
+    {
+      "beat": 88,
+      "type": "gbat",
+      "lane": 3,
+      "targetLane": 2
+    },
+    {
+      "beat": 89,
+      "type": "gbat",
+      "lane": 3,
+      "targetLane": 2
+    },
+    {
+      "beat": 92,
+      "type": "bigbone",
+      "lane": 2,
+      "targetLane": 1
+    },
+    {
+      "beat": 94,
+      "type": "skeleton",
+      "lane": 3
+    },
+    {
+      "beat": 97,
+      "type": "skeleton",
+      "lane": 2
+    },
+    {
+      "beat": 100,
+      "type": "skeleton",
+      "lane": 1
+    },
+    {
+      "beat": 104,
+      "type": "boss",
+      "lane": 2
     }
   ]
 }

@@ -17,7 +17,8 @@
     "size": 18,
     "bulletSpeed": 200,
     "beatTimerMultiplier": 2,
-    "stayDuration": 8
+    "stayDuration": 16,
+    "beatOffset": 0.75
   },
   "pskeleton": {
     "speed": 200,
@@ -25,7 +26,8 @@
     "size": 18,
     "bulletSpeed": 200,
     "beatTimerMultiplier": 2,
-    "stayDuration": 8
+    "stayDuration": 16,
+    "beatOffset": 0.75
   },
   "bigbone": {
     "speed": 200,
