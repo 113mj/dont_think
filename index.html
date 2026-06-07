@@ -12,8 +12,9 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 </head>
 <body>
 <script>
-const W = 480, H = 720;
-const LANE_XS = [52, 146, 240, 334, 428];
+const W = 720, H = 1080;
+const S = 1.5; // scale from original 480×720
+const LANE_XS = [78, 219, 360, 501, 642];
 
 const GAME_DATA = { levels: [], enemyDefs: {} };
 
@@ -54,7 +55,7 @@ class LevelPreloadScene extends Phaser.Scene {
 class BgmPreloadScene extends Phaser.Scene {
   constructor() { super('BgmPreloadScene'); }
   preload() {
-    const txt = this.add.text(W/2, H/2, 'Loading Audio...', { fontSize: '18px', color: '#ff8800' }).setOrigin(0.5);
+    const txt = this.add.text(W/2, H/2, 'Loading Audio...', { fontSize: '27px', color: '#ff8800' }).setOrigin(0.5);
     GAME_DATA.levels.forEach(lvl => {
       if (lvl.config.bgmFile) {
         this.load.audio(`bgm_${lvl.id}`, `LevelData/${lvl.id}/${lvl.config.bgmFile}`);
@@ -72,44 +73,44 @@ class TitleScene extends Phaser.Scene {
   create() {
     this.add.rectangle(0, 0, W, H, 0x080010).setOrigin(0);
     for (let i = 0; i < 90; i++)
-      this.add.circle(Math.random()*W, Math.random()*H, Math.random()*1.5+0.3, 0xffffff, Math.random()*0.5+0.1);
+      this.add.circle(Math.random()*W, Math.random()*H, Math.random()*2.25+0.45, 0xffffff, Math.random()*0.5+0.1);
 
     // 초승달
     const mg = this.add.graphics();
-    mg.fillStyle(0xffeeaa, 0.88); mg.fillCircle(W-75, 85, 50);
-    mg.fillStyle(0x080010, 1);    mg.fillCircle(W-52, 72, 50);
+    mg.fillStyle(0xffeeaa, 0.88); mg.fillCircle(W-113, 128, 75);
+    mg.fillStyle(0x080010, 1);    mg.fillCircle(W-78, 108, 75);
 
-    const title = this.add.text(W/2, H/2 - 170, 'Boo!m\nNight', {
-      fontSize: '54px', fontFamily: 'system-ui', color: '#ff8800', fontStyle: 'bold',
-      align: 'center', stroke: '#220000', strokeThickness: 6,
+    const title = this.add.text(W/2, H/2 - 255, 'Boo!m\nNight', {
+      fontSize: '81px', fontFamily: 'system-ui', color: '#ff8800', fontStyle: 'bold',
+      align: 'center', stroke: '#220000', strokeThickness: 9,
     }).setOrigin(0.5);
 
     // 유령 캐릭터
     const g = this.add.graphics();
     g.fillStyle(0xeeeeff, 0.92);
-    g.fillCircle(W/2, H/2 - 28, 36);
-    g.fillRect(W/2 - 36, H/2 - 28, 72, 36);
-    for (let i = 0; i < 3; i++) g.fillCircle(W/2 - 24 + i*24, H/2 + 8, 13);
+    g.fillCircle(W/2, H/2 - 42, 54);
+    g.fillRect(W/2 - 54, H/2 - 42, 108, 54);
+    for (let i = 0; i < 3; i++) g.fillCircle(W/2 - 36 + i*36, H/2 + 12, 20);
     g.fillStyle(0x000011);
-    g.fillCircle(W/2 - 12, H/2 - 28, 7);
-    g.fillCircle(W/2 + 12, H/2 - 28, 7);
+    g.fillCircle(W/2 - 18, H/2 - 42, 11);
+    g.fillCircle(W/2 + 18, H/2 - 42, 11);
 
-    this.add.text(W/2, H/2 + 38, '방향키 : 이동 + 공격 (박자에 맞게!)', {
-      fontSize: '14px', fontFamily: 'system-ui', color: '#ffbb88'
+    this.add.text(W/2, H/2 + 57, '방향키 : 이동 + 공격 (박자에 맞게!)', {
+      fontSize: '21px', fontFamily: 'system-ui', color: '#ffbb88'
     }).setOrigin(0.5);
-    this.add.text(W/2, H/2 + 60, '10콤보마다 점수 배율 +0.1x', {
-      fontSize: '13px', fontFamily: 'system-ui', color: '#ffaa66'
+    this.add.text(W/2, H/2 + 90, '10콤보마다 점수 배율 +0.1x', {
+      fontSize: '20px', fontFamily: 'system-ui', color: '#ffaa66'
     }).setOrigin(0.5);
-    this.add.text(W/2, H/2 + 82, 'Z : 폭탄 사용', {
-      fontSize: '13px', fontFamily: 'system-ui', color: '#ff9966'
+    this.add.text(W/2, H/2 + 123, 'Z : 폭탄 사용', {
+      fontSize: '20px', fontFamily: 'system-ui', color: '#ff9966'
     }).setOrigin(0.5);
 
     const bg = this.add.graphics();
-    const drawBtn = c => { bg.clear(); bg.fillStyle(c); bg.fillRoundedRect(W/2-110, H/2+105, 220, 52, 12); };
+    const drawBtn = c => { bg.clear(); bg.fillStyle(c); bg.fillRoundedRect(W/2-165, H/2+158, 330, 78, 18); };
     drawBtn(0x882200);
-    const zone = this.add.zone(W/2, H/2+131, 220, 52).setInteractive();
-    this.add.text(W/2, H/2+131, '🎃 시작하기', {
-      fontSize: '22px', fontFamily: 'system-ui', color: '#fff', fontStyle: 'bold'
+    const zone = this.add.zone(W/2, H/2+197, 330, 78).setInteractive();
+    this.add.text(W/2, H/2+197, '🎃 시작하기', {
+      fontSize: '33px', fontFamily: 'system-ui', color: '#fff', fontStyle: 'bold'
     }).setOrigin(0.5);
     zone.on('pointerover', () => drawBtn(0xcc3300));
     zone.on('pointerout',  () => drawBtn(0x882200));
@@ -118,7 +119,7 @@ class TitleScene extends Phaser.Scene {
       this.time.delayedCall(300, () => this.scene.start('SongSelectScene'));
     });
 
-    this.tweens.add({ targets: title, y: H/2 - 180, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+    this.tweens.add({ targets: title, y: H/2 - 270, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
   }
 }
 
@@ -131,52 +132,52 @@ class SongSelectScene extends Phaser.Scene {
     // 배경
     this.add.rectangle(0, 0, W, H, 0x080010).setOrigin(0);
     for (let i = 0; i < 80; i++)
-      this.add.circle(Math.random()*W, Math.random()*H, Math.random()*1.5+0.3, 0xffffff, Math.random()*0.45+0.08);
+      this.add.circle(Math.random()*W, Math.random()*H, Math.random()*2.25+0.45, 0xffffff, Math.random()*0.45+0.08);
 
     // 달
     const mg = this.add.graphics();
-    mg.fillStyle(0xffeeaa, 0.88); mg.fillCircle(W-75, 85, 50);
-    mg.fillStyle(0x080010, 1);    mg.fillCircle(W-52, 72, 50);
+    mg.fillStyle(0xffeeaa, 0.88); mg.fillCircle(W-113, 128, 75);
+    mg.fillStyle(0x080010, 1);    mg.fillCircle(W-78, 108, 75);
 
     // 뒤로가기
     const backBg = this.add.graphics();
-    backBg.fillStyle(0x330011, 0.8); backBg.fillRoundedRect(10, 10, 70, 28, 8);
-    const backZone = this.add.zone(45, 24, 70, 28).setInteractive();
-    this.add.text(45, 24, '← 뒤로', { fontSize: '13px', fontFamily: 'system-ui', color: '#ffaa66' }).setOrigin(0.5);
-    backZone.on('pointerover',  () => { backBg.clear(); backBg.fillStyle(0x551122, 0.9); backBg.fillRoundedRect(10, 10, 70, 28, 8); });
-    backZone.on('pointerout',   () => { backBg.clear(); backBg.fillStyle(0x330011, 0.8); backBg.fillRoundedRect(10, 10, 70, 28, 8); });
+    backBg.fillStyle(0x330011, 0.8); backBg.fillRoundedRect(15, 15, 105, 42, 12);
+    const backZone = this.add.zone(67, 36, 105, 42).setInteractive();
+    this.add.text(67, 36, '← 뒤로', { fontSize: '20px', fontFamily: 'system-ui', color: '#ffaa66' }).setOrigin(0.5);
+    backZone.on('pointerover',  () => { backBg.clear(); backBg.fillStyle(0x551122, 0.9); backBg.fillRoundedRect(15, 15, 105, 42, 12); });
+    backZone.on('pointerout',   () => { backBg.clear(); backBg.fillStyle(0x330011, 0.8); backBg.fillRoundedRect(15, 15, 105, 42, 12); });
     backZone.on('pointerdown',  () => { this.cameras.main.fade(300, 0,0,0); this.time.delayedCall(300, () => this.scene.start('TitleScene')); });
 
     // 타이틀
-    this.add.text(W/2, 58, '🎵 곡 선택', {
-      fontSize: '30px', fontFamily: 'system-ui', color: '#ff8800', fontStyle: 'bold',
-      stroke: '#220000', strokeThickness: 5,
+    this.add.text(W/2, 87, '🎵 곡 선택', {
+      fontSize: '45px', fontFamily: 'system-ui', color: '#ff8800', fontStyle: 'bold',
+      stroke: '#220000', strokeThickness: 8,
     }).setOrigin(0.5);
 
     // 곡 카드
-    const cardW = W - 60, cardH = 115;
+    const cardW = W - 90, cardH = 173;
     GAME_DATA.levels.forEach((lvl, i) => {
       const song = lvl.config;
-      const cardX = W / 2, cardY = 175 + i * 140;
+      const cardX = W / 2, cardY = 263 + i * 210;
       const bg = this.add.graphics();
 
       const draw = (hover) => {
         bg.clear();
         bg.fillStyle(hover ? 0x3a0022 : 0x1e000f, 1);
-        bg.lineStyle(2, hover ? 0xff6600 : 0x882200, 1);
-        bg.fillRoundedRect(cardX - cardW/2, cardY - cardH/2, cardW, cardH, 14);
-        bg.strokeRoundedRect(cardX - cardW/2, cardY - cardH/2, cardW, cardH, 14);
+        bg.lineStyle(3, hover ? 0xff6600 : 0x882200, 1);
+        bg.fillRoundedRect(cardX - cardW/2, cardY - cardH/2, cardW, cardH, 21);
+        bg.strokeRoundedRect(cardX - cardW/2, cardY - cardH/2, cardW, cardH, 21);
       };
       draw(false);
 
-      this.add.text(cardX, cardY - 24, song.name, {
-        fontSize: '22px', fontFamily: 'system-ui', color: '#ffeeaa', fontStyle: 'bold'
+      this.add.text(cardX, cardY - 36, song.name, {
+        fontSize: '33px', fontFamily: 'system-ui', color: '#ffeeaa', fontStyle: 'bold'
       }).setOrigin(0.5);
-      this.add.text(cardX - 70, cardY + 16, `BPM ${song.bpm}`, {
-        fontSize: '13px', fontFamily: 'system-ui', color: '#ff8844'
+      this.add.text(cardX - 105, cardY + 24, `BPM ${song.bpm}`, {
+        fontSize: '20px', fontFamily: 'system-ui', color: '#ff8844'
       }).setOrigin(0.5);
-      this.add.text(cardX + 70, cardY + 16, song.difficulty, {
-        fontSize: '14px', fontFamily: 'system-ui', color: '#ffcc44'
+      this.add.text(cardX + 105, cardY + 24, song.difficulty, {
+        fontSize: '21px', fontFamily: 'system-ui', color: '#ffcc44'
       }).setOrigin(0.5);
 
       const zone = this.add.zone(cardX, cardY, cardW, cardH).setInteractive();
@@ -205,8 +206,7 @@ class GameScene extends Phaser.Scene {
 
     this.levelData = level;
     this.config    = level.config;
-    
-    // 전역 적 정의와 레벨별 오버라이드 병합
+
     this.stats = JSON.parse(JSON.stringify(GAME_DATA.enemyDefs || {}));
     if (level.enemyStats) {
       for (let type in level.enemyStats) {
@@ -238,17 +238,16 @@ class GameScene extends Phaser.Scene {
     this.laneTween = null;
     this.boss      = null;
 
-    this.player = { x: LANE_XS[2], y: H - 100, vy: 0, w: 20, h: 26, lane: 2 };
+    this.player = { x: LANE_XS[2], y: H - 150, vy: 0, w: 30, h: 39, lane: 2 };
     this._playerVisible = true;
 
-    // JSON 웨이브 데이터를 큐로 변환 (Beat 기반 -> Time 기반 계산)
     const beatLen = 60 / (this.config.bpm || 130);
     const offset  = this.config.offset || 0;
     this.waveQueue = level.waves.map(w => [
-      w.beat * beatLen + offset, 
-      w.type, 
+      w.beat * beatLen + offset,
+      w.type,
       w.lane,
-      w.targetLane // <--- 누락되었던 목표 레인 추가
+      w.targetLane
     ]);
     this.waveQueue.sort((a, b) => a[0] - b[0]);
     this.waveIdx   = 0;
@@ -269,7 +268,6 @@ class GameScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(500);
 
-    // 배경 음악
     this.bgm = null;
     if (this.cache.audio.exists(this.songKey)) {
       this.sound.stopAll();
@@ -278,59 +276,56 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-
-
   buildHUD() {
-    this.add.rectangle(0, 0, W, 42, 0x000000, 0.72).setOrigin(0).setDepth(10);
-    this.scoreDisp = this.add.text(10, 8, '0', {
-      fontSize: '16px', fontFamily: 'system-ui', color: '#ffeeaa'
+    this.add.rectangle(0, 0, W, 63, 0x000000, 0.72).setOrigin(0).setDepth(10);
+    this.scoreDisp = this.add.text(15, 12, '0', {
+      fontSize: '24px', fontFamily: 'system-ui', color: '#ffeeaa'
     }).setOrigin(0, 0).setDepth(11);
 
-    // 비트 바 (상단 HUD 중앙)
     this.beatBarGfx = this.add.graphics().setDepth(12);
 
-    this.add.rectangle(0, H-32, W, 32, 0x000000, 0.72).setOrigin(0).setDepth(10);
-    this.bombDisp = this.add.text(12, H-16, '💣 x2', {
-      fontSize: '14px', fontFamily: 'system-ui', color: '#ffaa44'
+    this.add.rectangle(0, H-48, W, 48, 0x000000, 0.72).setOrigin(0).setDepth(10);
+    this.bombDisp = this.add.text(18, H-24, '💣 x2', {
+      fontSize: '21px', fontFamily: 'system-ui', color: '#ffaa44'
     }).setOrigin(0, 0.5).setDepth(11);
-    this.feverDisp = this.add.text(W/2, H-16, '', {
-      fontSize: '14px', fontFamily: 'system-ui', color: '#ffff55'
+    this.feverDisp = this.add.text(W/2, H-24, '', {
+      fontSize: '21px', fontFamily: 'system-ui', color: '#ffff55'
     }).setOrigin(0.5).setDepth(11);
-    this.comboDisp = this.add.text(W/2, H-16, '', {
-      fontSize: '13px', fontFamily: 'system-ui', color: '#ffcc88'
+    this.comboDisp = this.add.text(W/2, H-24, '', {
+      fontSize: '20px', fontFamily: 'system-ui', color: '#ffcc88'
     }).setOrigin(0.5).setDepth(11);
-    this.livesDisp = this.add.text(W-10, H-16, '👻 👻 👻', {
-      fontSize: '16px', fontFamily: 'system-ui', color: '#ffffff'
+    this.livesDisp = this.add.text(W-15, H-24, '👻 👻 👻', {
+      fontSize: '24px', fontFamily: 'system-ui', color: '#ffffff'
     }).setOrigin(1, 0.5).setDepth(11);
 
-    this.bossHpBg   = this.add.rectangle(W/2, H-52, W-40, 10, 0x330000).setDepth(12).setVisible(false);
-    this.bossHpFill = this.add.rectangle(20, H-52, W-40, 10, 0xff2222).setOrigin(0, 0.5).setDepth(12).setVisible(false);
-    this.bossLabel  = this.add.text(W/2, H-65, 'BOSS', {
-      fontSize: '12px', fontFamily: 'system-ui', color: '#ff8888'
+    this.bossHpBg   = this.add.rectangle(W/2, H-78, W-60, 15, 0x330000).setDepth(12).setVisible(false);
+    this.bossHpFill = this.add.rectangle(30, H-78, W-60, 15, 0xff2222).setOrigin(0, 0.5).setDepth(12).setVisible(false);
+    this.bossLabel  = this.add.text(W/2, H-98, 'BOSS', {
+      fontSize: '18px', fontFamily: 'system-ui', color: '#ff8888'
     }).setOrigin(0.5).setDepth(12).setVisible(false);
   }
 
   buildOverlays() {
-    this.bossWarning = this.add.text(W/2, H/2-60, '⚠ BOSS ⚠', {
-      fontSize: '44px', fontFamily: 'system-ui', color: '#ff4400', fontStyle: 'bold',
-      stroke: '#000', strokeThickness: 6,
+    this.bossWarning = this.add.text(W/2, H/2-90, '⚠ BOSS ⚠', {
+      fontSize: '66px', fontFamily: 'system-ui', color: '#ff4400', fontStyle: 'bold',
+      stroke: '#000', strokeThickness: 9,
     }).setOrigin(0.5).setAlpha(0).setDepth(20);
 
     this.itemMsg = this.add.text(W/2, H/3, '', {
-      fontSize: '24px', fontFamily: 'system-ui', color: '#ffff44',
-      stroke: '#000', strokeThickness: 3,
+      fontSize: '36px', fontFamily: 'system-ui', color: '#ffff44',
+      stroke: '#000', strokeThickness: 5,
     }).setOrigin(0.5).setAlpha(0).setDepth(20);
 
-    this.feverBanner = this.add.text(W/2, H/2-30, '🔥 FEVER! 🔥', {
-      fontSize: '40px', fontFamily: 'system-ui', color: '#ffff00', fontStyle: 'bold',
-      stroke: '#ff4400', strokeThickness: 5,
+    this.feverBanner = this.add.text(W/2, H/2-45, '🔥 FEVER! 🔥', {
+      fontSize: '60px', fontFamily: 'system-ui', color: '#ffff00', fontStyle: 'bold',
+      stroke: '#ff4400', strokeThickness: 8,
     }).setOrigin(0.5).setAlpha(0).setDepth(20);
 
     this.flashRect = this.add.rectangle(0, 0, W, H, 0xff0000, 0).setOrigin(0).setDepth(25);
 
     this.beatJudge = this.add.text(W/2, H * 0.52, '', {
-      fontSize: '20px', fontFamily: 'system-ui', color: '#ffff44', fontStyle: 'bold',
-      stroke: '#000', strokeThickness: 3,
+      fontSize: '30px', fontFamily: 'system-ui', color: '#ffff44', fontStyle: 'bold',
+      stroke: '#000', strokeThickness: 5,
     }).setOrigin(0.5).setAlpha(0).setDepth(22);
   }
 
@@ -366,10 +361,10 @@ class GameScene extends Phaser.Scene {
     if (moved) this.onPlayerMove();
 
     let tvy = 0;
-    if (this.cursors.up.isDown)   tvy = -175;
-    if (this.cursors.down.isDown) tvy =  175;
+    if (this.cursors.up.isDown)   tvy = -263;
+    if (this.cursors.down.isDown) tvy =  263;
     p.vy += (tvy - p.vy) * 0.18;
-    p.y = Phaser.Math.Clamp(p.y + p.vy * dt, p.h + 44, H - p.h - 35);
+    p.y = Phaser.Math.Clamp(p.y + p.vy * dt, p.h + 66, H - p.h - 53);
 
     if (Phaser.Input.Keyboard.JustDown(this.zKey)) this.useBomb();
   }
@@ -384,18 +379,15 @@ class GameScene extends Phaser.Scene {
 
   onPlayerMove() {
     const p = this.player;
-    // 이동 후 위치(새 레인)에서 레이저 발사
     const laserX = this.laneXs[p.lane];
-    
-    // 가장 가까운 적 찾기 (관통 방지)
-    let targetY = 42; // HUD 하단 (기본 목표점)
+
+    let targetY = 63;
     let hitEnemy = null;
     let minDiffY = 9999;
 
     this.enemies.forEach(e => {
       if (!e.alive) return;
-      // 같은 레인 판정 (중심 거리 40px 이내)
-      if (Math.abs(e.x - laserX) < 40 && e.y < p.y) {
+      if (Math.abs(e.x - laserX) < 60 && e.y < p.y) {
         const diffY = p.y - e.y;
         if (diffY < minDiffY) {
           minDiffY = diffY;
@@ -406,18 +398,17 @@ class GameScene extends Phaser.Scene {
 
     if (hitEnemy) {
       this.damageEnemy(hitEnemy, 1);
-      targetY = hitEnemy.y + (hitEnemy.size * 0.5); // 적의 하단부 근처에서 레이저 멈춤
+      targetY = hitEnemy.y + (hitEnemy.size * 0.5);
     }
 
-    this.lasers.push({ 
-      x: laserX, 
-      fromY: p.y - p.h * 0.5, 
-      toY: targetY, 
-      life: 0.22, 
-      maxLife: 0.22 
+    this.lasers.push({
+      x: laserX,
+      fromY: p.y - p.h * 0.5,
+      toY: targetY,
+      life: 0.22,
+      maxLife: 0.22
     });
 
-    // 비트 타이밍 판정 (±150ms 허용)
     const tolerance = 0.15;
     const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
     const phase = bElapsed % this.beatInterval;
@@ -458,7 +449,6 @@ class GameScene extends Phaser.Scene {
       const mult = 1 + Math.floor(this.gs.combo / 10) * 0.1;
       this.gs.score += Math.round((this.gs.fever ? base * 2 : base) * mult);
       this.spawnExplosion(e.x, e.y, 0xff8800, 8);
-      // random drop removed as requested
     }
   }
 
@@ -493,8 +483,7 @@ class GameScene extends Phaser.Scene {
   }
 
   spawnMapItem(type, lane) {
-    // 맵 상단에서 직접 내려오는 아이템 (적 드롭보다 크고 느림)
-    this.items.push({ x: this.laneXs[lane], y: -20, vy: 50, type, size: 15, alive: true });
+    this.items.push({ x: this.laneXs[lane], y: -30, vy: 75, type, size: 23, alive: true });
   }
 
   spawnEnemy(type, lane, targetLane) {
@@ -506,8 +495,8 @@ class GameScene extends Phaser.Scene {
     const s        = this.stats[type] || { speed: 100, hp: 1 };
 
     if (type === 'bat') {
-      this.enemies.push({ x, y: -20, vy: s.speed * ds, type, lane,
-        hp: s.hp, maxHp: s.hp, alive: true, size: 14, shootTimer: 0 });
+      this.enemies.push({ x, y: -30, vy: s.speed * ds * S, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 21, shootTimer: 0 });
     } else if (type === 'gbat') {
       const btm = s.beatTimerMultiplier || 1;
       const off = s.moveOffset || 0;
@@ -515,16 +504,16 @@ class GameScene extends Phaser.Scene {
       const nextMoveBeat = Math.ceil((currentBeat - off) / btm) * btm + off;
       const beatTimer = (nextMoveBeat - currentBeat) * this.beatInterval;
 
-      this.enemies.push({ x, y: -25, vy: s.speed * ds, type, lane,
-        hp: s.hp, maxHp: s.hp, alive: true, size: 21, shootTimer: 0,
-        beatTimer, spawnLane: lane, targetLane: targetLane ?? lane, 
+      this.enemies.push({ x, y: -38, vy: s.speed * ds * S, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 32, shootTimer: 0,
+        beatTimer, spawnLane: lane, targetLane: targetLane ?? lane,
         pingPong: false, btm });
     } else if (type === 'skeleton' || type === 'pskeleton') {
       const isPoss = type === 'pskeleton';
       const btm = s.beatTimerMultiplier || 2;
-      this.enemies.push({ x, y: -28, vy: s.speed * ds, type, lane,
-        hp: s.hp, maxHp: s.hp, alive: true, size: 18, shootTimer: 0,
-        settled: false, settleY: 100, exitTimer: 0,
+      this.enemies.push({ x, y: -42, vy: s.speed * ds * S, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 27, shootTimer: 0,
+        settled: false, settleY: 150, exitTimer: 0,
         spawnLane: lane, targetLane: targetLane ?? lane, pingPong: false,
         beatTimer: toNext * btm, beatCount: 0, ds, laneDir: isPoss ? 1 : 0, btm });
     }
@@ -535,10 +524,10 @@ class GameScene extends Phaser.Scene {
     this.gs.bossActive = true;
     const hp = 80;
     this.boss = {
-      x: W/2, y: -70, vy: 65, lane: 2,
+      x: W/2, y: -105, vy: 98, lane: 2,
       hp, maxHp: hp, type: 'boss',
-      alive: true, size: 48,
-      settled: false, settleY: 118,
+      alive: true, size: 72,
+      settled: false, settleY: 177,
       pattern: 0, phaseTimer: 0, patternTimer: 0,
       moveDir: 1, charging: false, chargeFired: false, chargeTimer: 0,
       prisonTimer: 0, prisonPause: 0,
@@ -557,7 +546,7 @@ class GameScene extends Phaser.Scene {
     this.enemyBullets.forEach(b => {
       if (!b.alive) return;
       b.x += b.vx * dt; b.y += b.vy * dt;
-      if (b.y > H+12 || b.x < -12 || b.x > W+12 || b.y < -12) b.alive = false;
+      if (b.y > H+18 || b.x < -18 || b.x > W+18 || b.y < -18) b.alive = false;
     });
     this.enemyBullets = this.enemyBullets.filter(b => b.alive);
   }
@@ -568,12 +557,10 @@ class GameScene extends Phaser.Scene {
       e.shootTimer += dt;
 
       if (e.type === 'bat') {
-        // 돌진형: 직선 낙하
         e.y += e.vy * dt;
-        if (e.y > H + 30) e.alive = false;
+        if (e.y > H + 45) e.alive = false;
 
       } else if (e.type === 'gbat') {
-        // 강화 돌진형: 지정된 두 레인 사이를 박자마다 번갈아 이동
         const s = this.stats[e.type] || {};
         e.y += e.vy * dt;
         e.beatTimer -= dt;
@@ -583,7 +570,7 @@ class GameScene extends Phaser.Scene {
           e.lane = e.pingPong ? e.targetLane : e.spawnLane;
           this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 120, ease: 'Cubic.Out' });
         }
-        if (e.y > H + 30) e.alive = false;
+        if (e.y > H + 45) e.alive = false;
 
       } else if (e.type === 'skeleton') {
         const s = this.stats[e.type] || {};
@@ -596,23 +583,20 @@ class GameScene extends Phaser.Scene {
             const syncUnit = this.beatInterval / 2;
             const phase    = bElapsed % syncUnit;
             const toNext   = syncUnit - phase;
-            e.beatTimer    = toNext; 
+            e.beatTimer    = toNext;
           }
         } else if (e.exiting) {
-          // [퇴장 모드] 위로 이동만 수행, 사격 중지
-          e.y -= 90 * dt;
-          if (e.y < -40) e.alive = false;
+          e.y -= 135 * dt;
+          if (e.y < -60) e.alive = false;
         } else {
-          // [대기/공격 모드]
           e.exitTimer += dt;
           e.beatTimer -= dt;
           if (e.beatTimer <= 0) {
             e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
             e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
-              vx: 0, vy: (s.bulletSpeed || 205) * (e.ds||1), dmg: 1, alive: true });
-            
-            // 박자 단위 머무는 시간이 지났다면, 이번 사격을 끝으로 퇴장 모드 전환
+              vx: 0, vy: (s.bulletSpeed || 205) * (e.ds||1) * S, dmg: 1, alive: true });
+
             const staySecs = (s.stayDuration || 8) * this.beatInterval;
             if (e.exitTimer >= staySecs) {
               e.exiting = true;
@@ -634,8 +618,8 @@ class GameScene extends Phaser.Scene {
             e.beatTimer    = toNext;
           }
         } else if (e.exiting) {
-          e.y -= 90 * dt;
-          if (e.y < -40) e.alive = false;
+          e.y -= 135 * dt;
+          if (e.y < -60) e.alive = false;
         } else {
           e.exitTimer += dt;
           e.beatTimer -= dt;
@@ -643,9 +627,8 @@ class GameScene extends Phaser.Scene {
             e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
             e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
-              vx: 0, vy: (s.bulletSpeed || 200) * (e.ds||1), dmg: 1, alive: true });
+              vx: 0, vy: (s.bulletSpeed || 200) * (e.ds||1) * S, dmg: 1, alive: true });
 
-            // 지정된 두 레인 사이를 번갈아 이동
             e.pingPong = !e.pingPong;
             e.lane = e.pingPong ? e.targetLane : e.spawnLane;
             this.tweens.add({ targets: e, x: this.laneXs[e.lane], duration: 170, ease: 'Cubic.Out' });
@@ -667,7 +650,6 @@ class GameScene extends Phaser.Scene {
         e.phaseTimer   += dt;
         e.patternTimer += dt;
 
-        // 6초마다 패턴 전환
         if (e.phaseTimer >= 6) {
           e.phaseTimer = 0;
           e.pattern = (e.pattern + 1) % 3;
@@ -677,7 +659,6 @@ class GameScene extends Phaser.Scene {
         }
 
         if (e.pattern === 0) {
-          // 가로 패턴: 랜덤 레인 이동 후 2레인 → 0.35s 후 2레인 시간차 발사
           if (e.patternTimer >= 2.4) {
             e.patternTimer = 0;
             const tl = ~~(Math.random() * 5);
@@ -685,17 +666,17 @@ class GameScene extends Phaser.Scene {
               targets: e, x: this.laneXs[tl], duration: 280, ease: 'Cubic.Out',
               onComplete: () => {
                 const lanes = [0,1,2,3,4].filter(l => l !== tl);
-                lanes.splice(~~(Math.random()*lanes.length), 1); // 빈 레인 1개
+                lanes.splice(~~(Math.random()*lanes.length), 1);
                 const first = lanes.slice(0, 2);
                 const second = lanes.slice(2);
-                const bvy = 190 * this.diffScale;
+                const bvy = 285 * this.diffScale;
                 first.forEach(l => this.enemyBullets.push({
-                  x: this.laneXs[l], y: e.y + 40, vx: 0, vy: bvy, dmg: 1, alive: true,
+                  x: this.laneXs[l], y: e.y + 60, vx: 0, vy: bvy, dmg: 1, alive: true,
                 }));
                 this.time.delayedCall(350, () => {
                   if (!e.alive) return;
                   second.forEach(l => this.enemyBullets.push({
-                    x: this.laneXs[l], y: e.y + 40, vx: 0, vy: bvy, dmg: 1, alive: true,
+                    x: this.laneXs[l], y: e.y + 60, vx: 0, vy: bvy, dmg: 1, alive: true,
                   }));
                 });
               },
@@ -703,25 +684,23 @@ class GameScene extends Phaser.Scene {
           }
 
         } else if (e.pattern === 1) {
-          // 돌진 패턴: 랜덤 레인으로 이동 후 아래로 돌진 + 좌우 탄
           if (!e.charging && e.patternTimer >= 2.2) {
             e.patternTimer = 0;
             const tl = ~~(Math.random() * 5);
             this.tweens.add({
-              targets: e, x: this.laneXs[tl], y: e.settleY - 35, duration: 380, ease: 'Cubic.Out',
+              targets: e, x: this.laneXs[tl], y: e.settleY - 53, duration: 380, ease: 'Cubic.Out',
               onComplete: () => { e.charging = true; e.chargeFired = false; e.chargeTimer = 0; },
             });
           }
           if (e.charging) {
             e.chargeTimer += dt;
-            e.y += 420 * dt;
+            e.y += 630 * dt;
             if (!e.chargeFired) {
               e.chargeFired = true;
-              // 좌우 3발씩
               for (let d = -1; d <= 1; d += 2) {
                 for (let i = 1; i <= 3; i++) {
-                  this.enemyBullets.push({ x: e.x + d*i*30, y: e.y,
-                    vx: 0, vy: 178 * this.diffScale, dmg: 1, alive: true });
+                  this.enemyBullets.push({ x: e.x + d*i*45, y: e.y,
+                    vx: 0, vy: 267 * this.diffScale, dmg: 1, alive: true });
                 }
               }
             }
@@ -732,32 +711,29 @@ class GameScene extends Phaser.Scene {
           }
 
         } else if (e.pattern === 2) {
-          // 감옥 패턴: 왼→오 이동, 진행 반대쪽 레인 1개 비우고 4개 발사
           e.prisonTimer += dt;
           if (e.prisonPause > 0) e.prisonPause -= dt;
-          e.x += e.moveDir * 80 * dt;
-          if (e.x > W - 55) {
-            e.x = W - 55; e.moveDir = -1;
-            // 방향 전환 후 발사 휴지 (플레이어가 피할 시간 확보)
+          e.x += e.moveDir * 120 * dt;
+          if (e.x > W - 83) {
+            e.x = W - 83; e.moveDir = -1;
             e.prisonPause = 0.9; e.prisonTimer = 0;
           }
-          if (e.x < 55) {
-            e.x = 55; e.moveDir = 1;
+          if (e.x < 83) {
+            e.x = 83; e.moveDir = 1;
             e.prisonPause = 0.9; e.prisonTimer = 0;
           }
           if (e.prisonPause <= 0 && e.prisonTimer >= 0.85) {
             e.prisonTimer = 0;
             const startL = e.moveDir > 0 ? 0 : 1;
-            // 2발 먼저, 0.35s 후 나머지 2발
-            const pvy = 165 * this.diffScale;
+            const pvy = 248 * this.diffScale;
             for (let l = startL; l < startL + 2; l++) {
-              this.enemyBullets.push({ x: this.laneXs[l], y: e.y + 45,
+              this.enemyBullets.push({ x: this.laneXs[l], y: e.y + 68,
                 vx: 0, vy: pvy, dmg: 1, alive: true });
             }
             this.time.delayedCall(350, () => {
               if (!e.alive) return;
               for (let l = startL + 2; l < startL + 4; l++) {
-                this.enemyBullets.push({ x: this.laneXs[l], y: e.y + 45,
+                this.enemyBullets.push({ x: this.laneXs[l], y: e.y + 68,
                   vx: 0, vy: pvy, dmg: 1, alive: true });
               }
             });
@@ -765,7 +741,7 @@ class GameScene extends Phaser.Scene {
         }
 
         const frac = Math.max(0, e.hp / e.maxHp);
-        this.bossHpFill.setDisplaySize((W-40)*frac, 10);
+        this.bossHpFill.setDisplaySize((W-60)*frac, 15);
       }
     });
     this.enemies = this.enemies.filter(e => e.alive);
@@ -776,21 +752,18 @@ class GameScene extends Phaser.Scene {
 
     if (this.gs.invincible) return;
 
-    // 적 탄 → 플레이어
     this.enemyBullets.forEach(b => {
       if (!b.alive) return;
       const dx = b.x - p.x, dy = b.y - p.y;
-      if (dx*dx + dy*dy < (p.w+4)*(p.w+4)) { b.alive = false; this.hitPlayer(); }
+      if (dx*dx + dy*dy < (p.w+6)*(p.w+6)) { b.alive = false; this.hitPlayer(); }
     });
 
-    // 적 접촉 → 플레이어
     this.enemies.forEach(e => {
       if (!e.alive || e.type === 'boss' || e.type === 'skeleton' || e.type === 'pskeleton') return;
       const dx = e.x - p.x, dy = e.y - p.y;
       if (dx*dx + dy*dy < (e.size + p.w*0.7)*(e.size + p.w*0.7)) { e.alive = false; this.hitPlayer(); }
     });
 
-    // 아이템 → 플레이어
     this.items = this.items.filter(item => {
       const dx = item.x - p.x, dy = item.y - p.y;
       if (dx*dx + dy*dy < (item.size + p.w)*(item.size + p.w)) { this.applyItem(item.type); return false; }
@@ -827,8 +800,8 @@ class GameScene extends Phaser.Scene {
 
   maybeDropItem(x, y) {
     const r = Math.random();
-    if      (r < 0.08) this.items.push({ x, y, vy: 82, type: 'bomb',  size: 12, alive: true });
-    else if (r < 0.14) this.items.push({ x, y, vy: 82, type: 'fever', size: 12, alive: true });
+    if      (r < 0.08) this.items.push({ x, y, vy: 123, type: 'bomb',  size: 18, alive: true });
+    else if (r < 0.14) this.items.push({ x, y, vy: 123, type: 'fever', size: 18, alive: true });
   }
 
   applyItem(type) {
@@ -846,9 +819,9 @@ class GameScene extends Phaser.Scene {
   }
 
   showMsg(txt) {
-    this.itemMsg.setText(txt).setY(H/2 - 20).setAlpha(1).setScale(1);
+    this.itemMsg.setText(txt).setY(H/2 - 30).setAlpha(1).setScale(1);
     this.tweens.killTweensOf(this.itemMsg);
-    this.tweens.add({ targets: this.itemMsg, alpha: 0, y: H/2 - 80, scaleX: 1.4, scaleY: 1.4, duration: 1100 });
+    this.tweens.add({ targets: this.itemMsg, alpha: 0, y: H/2 - 120, scaleX: 1.4, scaleY: 1.4, duration: 1100 });
   }
 
   updateFever(dt) {
@@ -858,24 +831,24 @@ class GameScene extends Phaser.Scene {
   }
 
   updateItems(dt) {
-    this.items.forEach(i => { i.y += i.vy * dt; if (i.y > H+20) i.alive = false; });
+    this.items.forEach(i => { i.y += i.vy * dt; if (i.y > H+30) i.alive = false; });
     this.items = this.items.filter(i => i.alive !== false);
   }
 
   spawnExplosion(x, y, color, count) {
     for (let i = 0; i < count; i++) {
-      const ang = Math.random()*Math.PI*2, spd = 60+Math.random()*160;
+      const ang = Math.random()*Math.PI*2, spd = 90+Math.random()*240;
       const life = 0.3+Math.random()*0.5;
       this.particles.push({ x, y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd,
-        life, maxLife: life, color, size: 2+Math.random()*4 });
+        life, maxLife: life, color, size: 3+Math.random()*6 });
     }
   }
 
   spawnHitParticles(x, y) {
     for (let i = 0; i < 4; i++) {
       const ang = Math.random()*Math.PI*2;
-      this.particles.push({ x, y, vx: Math.cos(ang)*100, vy: Math.sin(ang)*100,
-        life: 0.22, maxLife: 0.22, color: 0xffffff, size: 2.5 });
+      this.particles.push({ x, y, vx: Math.cos(ang)*150, vy: Math.sin(ang)*150,
+        life: 0.22, maxLife: 0.22, color: 0xffffff, size: 3.5 });
     }
   }
 
@@ -902,9 +875,9 @@ class GameScene extends Phaser.Scene {
 
   doStageClear() {
     if (this.bgm) this.bgm.stop();
-    this.add.text(W/2, H/2 - 20, 'STAGE CLEAR!', {
-      fontSize: '48px', fontFamily: 'system-ui', color: '#ffff44', fontStyle: 'bold',
-      stroke: '#000', strokeThickness: 6,
+    this.add.text(W/2, H/2 - 30, 'STAGE CLEAR!', {
+      fontSize: '72px', fontFamily: 'system-ui', color: '#ffff44', fontStyle: 'bold',
+      stroke: '#000', strokeThickness: 9,
     }).setOrigin(0.5).setDepth(30);
     this.time.delayedCall(2200, () => {
       this.cameras.main.fade(600, 0, 0, 0);
@@ -922,59 +895,52 @@ class GameScene extends Phaser.Scene {
   renderAll() {
     const p = this.player;
 
-    // 비트 펄스 계산 (BPM 130)
     const bElapsed  = Math.max(0, this.gs.elapsed - this.beatOffset);
     const beatPhase = (bElapsed % this.beatInterval) / this.beatInterval;
     const barPhase  = (bElapsed % (this.beatInterval * 4)) / (this.beatInterval * 4);
-    const beatPulse = Math.max(0, 1 - beatPhase * 5);   // 비트마다 짧은 플래시
-    const barPulse  = Math.max(0, 1 - barPhase  * 8);   // 마디마다 강한 플래시
+    const beatPulse = Math.max(0, 1 - beatPhase * 5);
+    const barPulse  = Math.max(0, 1 - barPhase  * 8);
 
-    // 비트 바 UI — 진자 방식 (중앙 통과 = 박자)
+    // 비트 바
     this.beatBarGfx.clear();
     {
       const bEl    = Math.max(0, this.gs.elapsed - this.beatOffset);
-      const angle  = (bEl * Math.PI) / this.beatInterval; // 비트마다 sin=0 (중앙)
+      const angle  = (bEl * Math.PI) / this.beatInterval;
       const sinPos = Math.sin(angle);
-      const HALF   = 190;   // 커서 이동 범위 ±px
-      const cy     = 22;
+      const HALF   = 285;
+      const cy     = 33;
       const cx     = W / 2;
       const onBeat = this.gs.lastMoveOnBeat;
-      // 커서 색: 콤보 성공 = 초록, 그 외 = 주황
       const cursorMain = onBeat ? 0x00ee44 : 0xff8800;
       const cursorGlow = onBeat ? 0x00ff88 : 0xff6600;
 
-      // 트랙 배경 (더 크고 밝게)
       this.beatBarGfx.fillStyle(0x2a0022, 0.95);
-      this.beatBarGfx.fillRoundedRect(cx - HALF - 12, cy - 13, (HALF + 12) * 2, 26, 8);
-      // 테두리
-      this.beatBarGfx.lineStyle(1.5, 0x882244, 0.8);
-      this.beatBarGfx.strokeRoundedRect(cx - HALF - 12, cy - 13, (HALF + 12) * 2, 26, 8);
+      this.beatBarGfx.fillRoundedRect(cx - HALF - 18, cy - 19, (HALF + 18) * 2, 39, 12);
+      this.beatBarGfx.lineStyle(2, 0x882244, 0.8);
+      this.beatBarGfx.strokeRoundedRect(cx - HALF - 18, cy - 19, (HALF + 18) * 2, 39, 12);
 
-      // 좌우 끝 마커 (반환점)
       for (const ex of [cx - HALF, cx + HALF]) {
         this.beatBarGfx.fillStyle(0xaa4466, 0.9);
-        this.beatBarGfx.fillRect(ex - 2, cy - 10, 4, 20);
+        this.beatBarGfx.fillRect(ex - 3, cy - 15, 6, 30);
       }
 
-      // 중앙 히트존 (더 넓고 밝게)
       const nearCenter = Math.abs(sinPos) < 0.45;
       this.beatBarGfx.fillStyle(nearCenter ? 0xff5500 : 0x661133, nearCenter ? 0.9 : 0.6);
-      this.beatBarGfx.fillRect(cx - 5, cy - 14, 10, 28);
+      this.beatBarGfx.fillRect(cx - 7, cy - 21, 14, 42);
       if (nearCenter) {
         this.beatBarGfx.fillStyle(0xff9900, (0.45 - Math.abs(sinPos)) * 1.0);
-        this.beatBarGfx.fillRect(cx - 14, cy - 15, 28, 30);
+        this.beatBarGfx.fillRect(cx - 21, cy - 22, 42, 45);
       }
 
-      // 움직이는 커서 (글로우 + 본체 + 하이라이트)
       const cursorX = cx + sinPos * HALF;
       this.beatBarGfx.fillStyle(cursorGlow, 0.35);
-      this.beatBarGfx.fillCircle(cursorX, cy, 15);
+      this.beatBarGfx.fillCircle(cursorX, cy, 22);
       this.beatBarGfx.fillStyle(cursorGlow, 0.18);
-      this.beatBarGfx.fillCircle(cursorX, cy, 20);
+      this.beatBarGfx.fillCircle(cursorX, cy, 30);
       this.beatBarGfx.fillStyle(cursorMain, 1);
-      this.beatBarGfx.fillCircle(cursorX, cy, 8);
+      this.beatBarGfx.fillCircle(cursorX, cy, 12);
       this.beatBarGfx.fillStyle(0xffffff, 0.9);
-      this.beatBarGfx.fillCircle(cursorX - 2.5, cy - 2.5, 3);
+      this.beatBarGfx.fillCircle(cursorX - 4, cy - 4, 4.5);
     }
 
     // 배경
@@ -982,11 +948,9 @@ class GameScene extends Phaser.Scene {
     this.bgGfx.fillStyle(0x080010);
     this.bgGfx.fillRect(0, 0, W, H);
 
-    // 달 (비트에 맞춰 미세하게 빛남)
     this.bgGfx.fillStyle(0xffeeaa, 0.15 + barPulse * 0.08);
-    this.bgGfx.fillCircle(W - 68, 88, 52);
+    this.bgGfx.fillCircle(W - 102, 132, 78);
 
-    // 비트 배경 플래시
     if (beatPulse > 0.01) {
       this.bgGfx.fillStyle(0x4400aa, beatPulse * 0.06);
       this.bgGfx.fillRect(0, 0, W, H);
@@ -997,27 +961,25 @@ class GameScene extends Phaser.Scene {
     }
 
     // 레인 그리드
-    const lb = [0, 99, 193, 287, 381, W];
+    const lb = [0, 148, 290, 431, 572, W];
     for (let i = 0; i < 5; i++) {
       this.bgGfx.fillStyle(0x330033, i%2===0 ? 0.06 : 0.03);
-      this.bgGfx.fillRect(lb[i], 42, lb[i+1]-lb[i], H-74);
+      this.bgGfx.fillRect(lb[i], 63, lb[i+1]-lb[i], H-111);
     }
-    this.bgGfx.lineStyle(1, 0x552255, 0.45 + beatPulse * 0.25);
+    this.bgGfx.lineStyle(1.5, 0x552255, 0.45 + beatPulse * 0.25);
     for (let i = 1; i < 5; i++) {
       this.bgGfx.beginPath();
-      this.bgGfx.moveTo(lb[i], 42);
-      this.bgGfx.lineTo(lb[i], H-32);
+      this.bgGfx.moveTo(lb[i], 63);
+      this.bgGfx.lineTo(lb[i], H-48);
       this.bgGfx.strokePath();
     }
-    // 레인 마커: 비트에 맞춰 펄스
     for (let i = 0; i < 5; i++) {
       const active = i === p.lane;
-      const mH = 5 + (active ? beatPulse * 7 : beatPulse * 3);
+      const mH = 7.5 + (active ? beatPulse * 10.5 : beatPulse * 4.5);
       this.bgGfx.fillStyle(active ? 0xff8800 : 0x8844bb, active ? 0.85 : (0.28 + beatPulse * 0.35));
-      this.bgGfx.fillRect(this.laneXs[i]-4, H-36, 8, mH);
+      this.bgGfx.fillRect(this.laneXs[i]-6, H-54, 12, mH);
     }
 
-    // 피버 배경 오버레이
     if (this.gs.fever) {
       this.bgGfx.fillStyle(0xffaa00, 0.06);
       this.bgGfx.fillRect(0, 0, W, H);
@@ -1029,33 +991,27 @@ class GameScene extends Phaser.Scene {
       if (!e.alive) return;
 
       if (e.type === 'bat') {
-        // 박쥐: 보라 날개 + 몸통
         this.enemyGfx.fillStyle(0x440066);
-        this.enemyGfx.lineStyle(1.5, 0xaa44ff);
-        // 왼 날개
+        this.enemyGfx.lineStyle(2, 0xaa44ff);
         this.enemyGfx.beginPath();
         this.enemyGfx.moveTo(e.x, e.y);
         this.enemyGfx.lineTo(e.x - e.size*1.6, e.y - e.size*0.9);
         this.enemyGfx.lineTo(e.x - e.size*0.4, e.y + e.size*0.35);
         this.enemyGfx.closePath(); this.enemyGfx.fillPath(); this.enemyGfx.strokePath();
-        // 오른 날개
         this.enemyGfx.beginPath();
         this.enemyGfx.moveTo(e.x, e.y);
         this.enemyGfx.lineTo(e.x + e.size*1.6, e.y - e.size*0.9);
         this.enemyGfx.lineTo(e.x + e.size*0.4, e.y + e.size*0.35);
         this.enemyGfx.closePath(); this.enemyGfx.fillPath(); this.enemyGfx.strokePath();
-        // 몸통
         this.enemyGfx.fillStyle(0x220033);
         this.enemyGfx.fillCircle(e.x, e.y, e.size*0.55);
-        // 눈
         this.enemyGfx.fillStyle(0xff3333, 0.9);
-        this.enemyGfx.fillCircle(e.x - e.size*0.2, e.y, 3);
-        this.enemyGfx.fillCircle(e.x + e.size*0.2, e.y, 3);
+        this.enemyGfx.fillCircle(e.x - e.size*0.2, e.y, 4.5);
+        this.enemyGfx.fillCircle(e.x + e.size*0.2, e.y, 4.5);
 
       } else if (e.type === 'gbat') {
-        // 거대 박쥐
         this.enemyGfx.fillStyle(0x330055);
-        this.enemyGfx.lineStyle(2, 0xcc44ff);
+        this.enemyGfx.lineStyle(3, 0xcc44ff);
         this.enemyGfx.beginPath();
         this.enemyGfx.moveTo(e.x, e.y);
         this.enemyGfx.lineTo(e.x - e.size*1.7, e.y - e.size*0.95);
@@ -1069,23 +1025,20 @@ class GameScene extends Phaser.Scene {
         this.enemyGfx.fillStyle(0x1a001a);
         this.enemyGfx.fillCircle(e.x, e.y, e.size*0.65);
         this.enemyGfx.fillStyle(0xff6600, 0.95);
-        this.enemyGfx.fillCircle(e.x - e.size*0.25, e.y, 4.5);
-        this.enemyGfx.fillCircle(e.x + e.size*0.25, e.y, 4.5);
+        this.enemyGfx.fillCircle(e.x - e.size*0.25, e.y, 6.5);
+        this.enemyGfx.fillCircle(e.x + e.size*0.25, e.y, 6.5);
 
       } else if (e.type === 'skeleton' || e.type === 'pskeleton') {
         const isPoss = e.type === 'pskeleton';
-        // 해골 머리
         this.enemyGfx.fillStyle(isPoss ? 0x226644 : 0x888877);
         this.enemyGfx.fillCircle(e.x, e.y, e.size);
         this.enemyGfx.fillStyle(isPoss ? 0x88ffcc : 0xddddc8);
-        this.enemyGfx.lineStyle(2, isPoss ? 0x44ffaa : 0xffffff, 0.9);
+        this.enemyGfx.lineStyle(3, isPoss ? 0x44ffaa : 0xffffff, 0.9);
         this.enemyGfx.fillCircle(e.x, e.y, e.size*0.82);
         this.enemyGfx.strokeCircle(e.x, e.y, e.size*0.82);
-        // 눈 구멍
         this.enemyGfx.fillStyle(0x000011);
         this.enemyGfx.fillCircle(e.x - e.size*0.28, e.y - e.size*0.12, e.size*0.2);
         this.enemyGfx.fillCircle(e.x + e.size*0.28, e.y - e.size*0.12, e.size*0.2);
-        // 이빨
         this.enemyGfx.fillStyle(0x000011);
         this.enemyGfx.fillRect(e.x - e.size*0.3, e.y + e.size*0.18, e.size*0.6, e.size*0.2);
         this.enemyGfx.fillStyle(isPoss ? 0x88ffcc : 0xddddc8);
@@ -1093,17 +1046,14 @@ class GameScene extends Phaser.Scene {
           this.enemyGfx.fillRect(e.x - e.size*0.22 + i*e.size*0.22, e.y + e.size*0.18, e.size*0.12, e.size*0.2);
 
       } else if (e.type === 'boss') {
-        // 보스: 할로윈 호박
         this.enemyGfx.fillStyle(0x772200);
         this.enemyGfx.fillCircle(e.x, e.y, e.size);
         this.enemyGfx.fillStyle(0xff6600);
-        this.enemyGfx.lineStyle(4, 0xffaa00);
+        this.enemyGfx.lineStyle(6, 0xffaa00);
         this.enemyGfx.fillCircle(e.x, e.y, e.size*0.86);
         this.enemyGfx.strokeCircle(e.x, e.y, e.size*0.86);
-        // 꼭지
         this.enemyGfx.fillStyle(0x224400);
-        this.enemyGfx.fillRect(e.x - 5, e.y - e.size - 10, 10, 14);
-        // 삼각 눈
+        this.enemyGfx.fillRect(e.x - 7, e.y - e.size - 15, 15, 21);
         this.enemyGfx.fillStyle(0x000011);
         for (let s = -1; s <= 1; s += 2) {
           this.enemyGfx.beginPath();
@@ -1112,8 +1062,7 @@ class GameScene extends Phaser.Scene {
           this.enemyGfx.lineTo(e.x + s*(e.size*0.28 + e.size*0.18), e.y + e.size*0.1);
           this.enemyGfx.closePath(); this.enemyGfx.fillPath();
         }
-        // 들쭉 입
-        this.enemyGfx.lineStyle(3, 0x000011);
+        this.enemyGfx.lineStyle(4.5, 0x000011);
         this.enemyGfx.beginPath();
         const mx = e.x, my = e.y + e.size*0.3;
         this.enemyGfx.moveTo(mx - e.size*0.38, my);
@@ -1122,9 +1071,8 @@ class GameScene extends Phaser.Scene {
         this.enemyGfx.lineTo(mx + e.size*0.2,  my + e.size*0.2);
         this.enemyGfx.lineTo(mx + e.size*0.38, my);
         this.enemyGfx.strokePath();
-        // 패턴 1 충전 글로우
         if (e.pattern === 1 && !e.charging) {
-          this.enemyGfx.lineStyle(4, 0xff4400, 0.35);
+          this.enemyGfx.lineStyle(6, 0xff4400, 0.35);
           this.enemyGfx.strokeCircle(e.x, e.y, e.size * 1.3);
         }
       }
@@ -1136,14 +1084,14 @@ class GameScene extends Phaser.Scene {
       if (item.type === 'bomb') {
         this.itemGfx.fillStyle(0x333333);
         this.itemGfx.fillCircle(item.x, item.y, item.size);
-        this.itemGfx.lineStyle(2, 0xffaa00);
+        this.itemGfx.lineStyle(3, 0xffaa00);
         this.itemGfx.strokeCircle(item.x, item.y, item.size);
         this.itemGfx.fillStyle(0xff4400);
-        this.itemGfx.fillRect(item.x - 2, item.y - item.size - 5, 4, 7);
+        this.itemGfx.fillRect(item.x - 3, item.y - item.size - 8, 6, 11);
       } else if (item.type === 'fever') {
         this.itemGfx.fillStyle(0xffff00);
         this.itemGfx.fillCircle(item.x, item.y, item.size);
-        this.itemGfx.lineStyle(2, 0xff8800, 0.9);
+        this.itemGfx.lineStyle(3, 0xff8800, 0.9);
         this.itemGfx.strokeCircle(item.x, item.y, item.size);
         this.itemGfx.fillStyle(0xff4400, 0.85);
         this.itemGfx.fillCircle(item.x, item.y, item.size * 0.45);
@@ -1154,21 +1102,18 @@ class GameScene extends Phaser.Scene {
     this.laserGfx.clear();
     this.lasers.forEach(l => {
       const a = l.life / l.maxLife;
-      const endY = l.toY || 42;
-      // 외곽 글로우
-      this.laserGfx.lineStyle(10, 0xcc44ff, a * 0.25);
+      const endY = l.toY || 63;
+      this.laserGfx.lineStyle(15, 0xcc44ff, a * 0.25);
       this.laserGfx.beginPath();
       this.laserGfx.moveTo(l.x, l.fromY);
       this.laserGfx.lineTo(l.x, endY);
       this.laserGfx.strokePath();
-      // 중간 빔
-      this.laserGfx.lineStyle(4, 0xff88ff, a * 0.7);
+      this.laserGfx.lineStyle(6, 0xff88ff, a * 0.7);
       this.laserGfx.beginPath();
       this.laserGfx.moveTo(l.x, l.fromY);
       this.laserGfx.lineTo(l.x, endY);
       this.laserGfx.strokePath();
-      // 코어 (흰색)
-      this.laserGfx.lineStyle(1.5, 0xffffff, a);
+      this.laserGfx.lineStyle(2.5, 0xffffff, a);
       this.laserGfx.beginPath();
       this.laserGfx.moveTo(l.x, l.fromY);
       this.laserGfx.lineTo(l.x, endY);
@@ -1180,9 +1125,9 @@ class GameScene extends Phaser.Scene {
     this.enemyBullets.forEach(b => {
       if (!b.alive) return;
       this.bulletGfx.fillStyle(0xeeddcc);
-      this.bulletGfx.fillCircle(b.x, b.y, 5);
-      this.bulletGfx.lineStyle(1.5, 0x887766, 0.65);
-      this.bulletGfx.strokeCircle(b.x, b.y, 5);
+      this.bulletGfx.fillCircle(b.x, b.y, 7.5);
+      this.bulletGfx.lineStyle(2, 0x887766, 0.65);
+      this.bulletGfx.strokeCircle(b.x, b.y, 7.5);
     });
 
     // 플레이어 유령
@@ -1192,10 +1137,8 @@ class GameScene extends Phaser.Scene {
       this.playerGfx.fillStyle(0xeeeeff, 0.94);
       this.playerGfx.fillCircle(px, py - p.h*0.38, p.w*0.88);
       this.playerGfx.fillRect(px - p.w*0.88, py - p.h*0.38, p.w*1.76, p.h*0.68);
-      // 웨이브 하단 3개 반원
       for (let i = 0; i < 3; i++)
         this.playerGfx.fillCircle(px - p.w*0.58 + i*p.w*0.58, py + p.h*0.3, p.w*0.36);
-      // 눈
       this.playerGfx.fillStyle(0x000011);
       this.playerGfx.fillCircle(px - p.w*0.3,  py - p.h*0.32, p.w*0.22);
       this.playerGfx.fillCircle(px + p.w*0.3,  py - p.h*0.32, p.w*0.22);
@@ -1218,24 +1161,24 @@ class ClearScene extends Phaser.Scene {
     this.cameras.main.fadeIn(600);
     this.add.rectangle(0, 0, W, H, 0x080010).setOrigin(0);
     for (let i = 0; i < 100; i++)
-      this.add.circle(Math.random()*W, Math.random()*H, Math.random()*2+0.3, 0xffeeaa, Math.random()*0.6+0.1);
-    this.add.text(W/2, H/2 - 165, 'STAGE CLEAR!', {
-      fontSize: '44px', fontFamily: 'system-ui', color: '#ffff44', fontStyle: 'bold',
+      this.add.circle(Math.random()*W, Math.random()*H, Math.random()*3+0.45, 0xffeeaa, Math.random()*0.6+0.1);
+    this.add.text(W/2, H/2 - 248, 'STAGE CLEAR!', {
+      fontSize: '66px', fontFamily: 'system-ui', color: '#ffff44', fontStyle: 'bold',
+      stroke: '#000', strokeThickness: 9,
+    }).setOrigin(0.5);
+    this.add.text(W/2, H/2 - 147, '🎃', { fontSize: '93px' }).setOrigin(0.5);
+    this.add.text(W/2, H/2 - 23, '최종 점수', {
+      fontSize: '30px', fontFamily: 'system-ui', color: '#ffaa66'
+    }).setOrigin(0.5);
+    this.add.text(W/2, H/2 + 83, (data.score||0).toLocaleString(), {
+      fontSize: '81px', fontFamily: 'system-ui', color: '#ffffff', fontStyle: 'bold',
       stroke: '#000', strokeThickness: 6,
     }).setOrigin(0.5);
-    this.add.text(W/2, H/2 - 98, '🎃', { fontSize: '62px' }).setOrigin(0.5);
-    this.add.text(W/2, H/2 - 15, '최종 점수', {
-      fontSize: '20px', fontFamily: 'system-ui', color: '#ffaa66'
-    }).setOrigin(0.5);
-    this.add.text(W/2, H/2 + 55, (data.score||0).toLocaleString(), {
-      fontSize: '54px', fontFamily: 'system-ui', color: '#ffffff', fontStyle: 'bold',
-      stroke: '#000', strokeThickness: 4,
-    }).setOrigin(0.5);
     const bg = this.add.graphics();
-    const d = c => { bg.clear(); bg.fillStyle(c); bg.fillRoundedRect(W/2-100, H/2+125, 200, 50, 10); };
+    const d = c => { bg.clear(); bg.fillStyle(c); bg.fillRoundedRect(W/2-150, H/2+188, 300, 75, 15); };
     d(0x882200);
-    const z = this.add.zone(W/2, H/2+150, 200, 50).setInteractive();
-    this.add.text(W/2, H/2+150, '다시 시작', { fontSize: '22px', fontFamily: 'system-ui', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    const z = this.add.zone(W/2, H/2+225, 300, 75).setInteractive();
+    this.add.text(W/2, H/2+225, '다시 시작', { fontSize: '33px', fontFamily: 'system-ui', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
     z.on('pointerover', () => d(0xcc3300)).on('pointerout', () => d(0x882200));
     z.on('pointerdown', () => { this.cameras.main.fade(300,0,0,0); this.time.delayedCall(300, () => this.scene.start('SongSelectScene')); });
   }
@@ -1248,23 +1191,23 @@ class GameOverScene extends Phaser.Scene {
     this.cameras.main.fadeIn(500);
     this.add.rectangle(0, 0, W, H, 0x080010).setOrigin(0);
     for (let i = 0; i < 80; i++)
-      this.add.circle(Math.random()*W, Math.random()*H, Math.random()*1.5+0.3, 0xffffff, Math.random()*0.4+0.1);
-    this.add.text(W/2, H/2 - 155, 'GAME OVER', {
-      fontSize: '50px', fontFamily: 'system-ui', color: '#ff4444', fontStyle: 'bold',
+      this.add.circle(Math.random()*W, Math.random()*H, Math.random()*2.25+0.45, 0xffffff, Math.random()*0.4+0.1);
+    this.add.text(W/2, H/2 - 233, 'GAME OVER', {
+      fontSize: '75px', fontFamily: 'system-ui', color: '#ff4444', fontStyle: 'bold',
+      stroke: '#000', strokeThickness: 9,
+    }).setOrigin(0.5);
+    this.add.text(W/2, H/2 - 108, '최종 점수', {
+      fontSize: '30px', fontFamily: 'system-ui', color: '#ffaa66'
+    }).setOrigin(0.5);
+    this.add.text(W/2, H/2 + 15, (data.score||0).toLocaleString(), {
+      fontSize: '78px', fontFamily: 'system-ui', color: '#ffffff', fontStyle: 'bold',
       stroke: '#000', strokeThickness: 6,
     }).setOrigin(0.5);
-    this.add.text(W/2, H/2 - 72, '최종 점수', {
-      fontSize: '20px', fontFamily: 'system-ui', color: '#ffaa66'
-    }).setOrigin(0.5);
-    this.add.text(W/2, H/2 + 10, (data.score||0).toLocaleString(), {
-      fontSize: '52px', fontFamily: 'system-ui', color: '#ffffff', fontStyle: 'bold',
-      stroke: '#000', strokeThickness: 4,
-    }).setOrigin(0.5);
     const bg = this.add.graphics();
-    const d = c => { bg.clear(); bg.fillStyle(c); bg.fillRoundedRect(W/2-100, H/2+105, 200, 50, 10); };
+    const d = c => { bg.clear(); bg.fillStyle(c); bg.fillRoundedRect(W/2-150, H/2+158, 300, 75, 15); };
     d(0x882200);
-    const z = this.add.zone(W/2, H/2+130, 200, 50).setInteractive();
-    this.add.text(W/2, H/2+130, '다시 시작', { fontSize: '22px', fontFamily: 'system-ui', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    const z = this.add.zone(W/2, H/2+195, 300, 75).setInteractive();
+    this.add.text(W/2, H/2+195, '다시 시작', { fontSize: '33px', fontFamily: 'system-ui', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
     z.on('pointerover', () => d(0xcc3300)).on('pointerout', () => d(0x882200));
     z.on('pointerdown', () => { this.cameras.main.fade(300,0,0,0); this.time.delayedCall(300, () => this.scene.start('SongSelectScene')); });
   }
