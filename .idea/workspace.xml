@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2ea249fd-789f-46aa-a5e2-d87e6a8ba55b" name="변경" comment="">
-      <change beforePath="$PROJECT_DIR$/LevelData/enemies.json" beforeDir="false" afterPath="$PROJECT_DIR$/LevelData/enemies.json" afterDir="false" />
-    </list>
+    <list default="true" id="2ea249fd-789f-46aa-a5e2-d87e6a8ba55b" name="변경" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -47,7 +45,7 @@
       <option name="presentableId" value="Default" />
       <updated>1780624691255</updated>
       <workItem from="1780624691256" duration="3251000" />
-      <workItem from="1780841930274" duration="7245000" />
+      <workItem from="1780841930274" duration="7952000" />
     </task>
     <servers />
   </component>
