@@ -27,6 +27,11 @@
     "beatTimerMultiplier": 2,
     "stayDuration": 8
   },
+  "bigbone": {
+    "speed": 150,
+    "hp": 3,
+    "size": 70
+  },
   "boss": {
     "hp": 80,
     "size": 48

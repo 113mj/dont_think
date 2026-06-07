@@ -7,10 +7,12 @@
 <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#000; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+html, body { width:100%; height:100%; overflow:hidden; background:#000; }
+#game-container { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
 </style>
 </head>
 <body>
+<div id="game-container"></div>
 <script>
 const W = 720, H = 1080;
 const S = 1.5; // scale from original 480×720
@@ -217,7 +219,6 @@ class GameScene extends Phaser.Scene {
     this.songKey      = `bgm_${levelId}`;
     this.beatInterval = 60 / (this.config.bpm || 130);
     this.beatOffset   = this.config.offset   || 0.51;
-    this.diffScale    = this.config.diffScale || 1.0;
 
     this.gs = {
       lives: 3, score: 0, bombs: 2,
@@ -415,11 +416,8 @@ class GameScene extends Phaser.Scene {
     const upJust    = Phaser.Input.Keyboard.JustDown(this.cursors.up);
     const downJust  = Phaser.Input.Keyboard.JustDown(this.cursors.down);
 
-    let moved = false;
-    if (leftJust  && p.lane > 0) { p.lane--; this.moveLane(); moved = true; }
-    if (rightJust && p.lane < 4) { p.lane++; this.moveLane(); moved = true; }
-    if (upJust || downJust) moved = true;
-    if (moved) this.onPlayerMove();
+    if (leftJust  && p.lane > 0) { p.lane--; this.moveLane(); this.onPlayerMove(); }
+    if (rightJust && p.lane < 4) { p.lane++; this.moveLane(); this.onPlayerMove(); }
 
     let tvy = 0;
     if (this.cursors.up.isDown)   tvy = -263;
@@ -448,7 +446,7 @@ class GameScene extends Phaser.Scene {
 
     this.enemies.forEach(e => {
       if (!e.alive) return;
-      if (Math.abs(e.x - laserX) < 60 && e.y < p.y) {
+      if (Math.abs(e.x - laserX) < (e.type === 'bigbone' ? e.size : 60) && e.y < p.y) {
         const diffY = p.y - e.y;
         if (diffY < minDiffY) {
           minDiffY = diffY;
@@ -552,12 +550,14 @@ class GameScene extends Phaser.Scene {
     const bElapsed = Math.max(0, this.gs.elapsed - this.beatOffset);
     const phase    = bElapsed % this.beatInterval;
     const toNext   = this.beatInterval - phase;
-    const ds       = this.diffScale;
     const s        = this.stats[type] || { speed: 100, hp: 1 };
 
     if (type === 'bat') {
-      this.enemies.push({ x, y: -30, vy: s.speed * ds * S, type, lane,
+      this.enemies.push({ x, y: -30, vy: s.speed * S, type, lane,
         hp: s.hp, maxHp: s.hp, alive: true, size: 21, shootTimer: 0 });
+    } else if (type === 'bigbone') {
+      this.enemies.push({ x, y: -50, vy: s.speed * S, type, lane,
+        hp: s.hp, maxHp: s.hp, alive: true, size: 70, shootTimer: 0 });
     } else if (type === 'gbat') {
       const btm = s.beatTimerMultiplier || 1;
       const off = s.moveOffset || 0;
@@ -565,18 +565,18 @@ class GameScene extends Phaser.Scene {
       const nextMoveBeat = Math.ceil((currentBeat - off) / btm) * btm + off;
       const beatTimer = (nextMoveBeat - currentBeat) * this.beatInterval;
 
-      this.enemies.push({ x, y: -38, vy: s.speed * ds * S, type, lane,
+      this.enemies.push({ x, y: -38, vy: s.speed * S, type, lane,
         hp: s.hp, maxHp: s.hp, alive: true, size: 32, shootTimer: 0,
         beatTimer, spawnLane: lane, targetLane: targetLane ?? lane,
         pingPong: false, btm });
     } else if (type === 'skeleton' || type === 'pskeleton') {
       const isPoss = type === 'pskeleton';
       const btm = s.beatTimerMultiplier || 2;
-      this.enemies.push({ x, y: -42, vy: s.speed * ds * S, type, lane,
+      this.enemies.push({ x, y: -42, vy: s.speed * S, type, lane,
         hp: s.hp, maxHp: s.hp, alive: true, size: 27, shootTimer: 0,
         settled: false, settleY: 150, exitTimer: 0,
         spawnLane: lane, targetLane: targetLane ?? lane, pingPong: false,
-        beatTimer: toNext * btm, beatCount: 0, ds, laneDir: isPoss ? 1 : 0, btm });
+        beatTimer: toNext * btm, beatCount: 0, laneDir: isPoss ? 1 : 0, btm });
     }
   }
 
@@ -617,7 +617,7 @@ class GameScene extends Phaser.Scene {
       if (!e.alive) return;
       e.shootTimer += dt;
 
-      if (e.type === 'bat') {
+      if (e.type === 'bat' || e.type === 'bigbone') {
         e.y += e.vy * dt;
         if (e.y > H + 45) e.alive = false;
 
@@ -656,7 +656,7 @@ class GameScene extends Phaser.Scene {
             e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
             e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
-              vx: 0, vy: (s.bulletSpeed || 205) * (e.ds||1) * S, dmg: 1, alive: true });
+              vx: 0, vy: (s.bulletSpeed || 205) * S, dmg: 1, alive: true });
 
             const staySecs = (s.stayDuration || 8) * this.beatInterval;
             if (e.exitTimer >= staySecs) {
@@ -688,7 +688,7 @@ class GameScene extends Phaser.Scene {
             e.beatTimer += this.beatInterval * (s.beatTimerMultiplier || 2);
             e.beatCount++;
             this.enemyBullets.push({ x: e.x, y: e.y + e.size,
-              vx: 0, vy: (s.bulletSpeed || 200) * (e.ds||1) * S, dmg: 1, alive: true });
+              vx: 0, vy: (s.bulletSpeed || 200) * S, dmg: 1, alive: true });
 
             e.pingPong = !e.pingPong;
             e.lane = e.pingPong ? e.targetLane : e.spawnLane;
@@ -729,7 +729,7 @@ class GameScene extends Phaser.Scene {
               onComplete: () => {
                 const lanes = [0,1,2,3,4].filter(l => l !== tl);
                 lanes.splice(~~(Math.random()*lanes.length), 1);
-                const bvy = 285 * this.diffScale;
+                const bvy = 285;
                 lanes.forEach(l => this.enemyBullets.push({
                   x: this.laneXs[l], y: e.y + 60, vx: 0, vy: bvy, dmg: 1, alive: true,
                 }));
@@ -767,9 +767,9 @@ class GameScene extends Phaser.Scene {
             e.x = 83; e.moveDir = 1;
             e.prisonPause = 0.9; e.prisonTimer = 0;
           }
-          if (e.prisonPause <= 0 && e.prisonTimer >= 0.85) {
+          if (e.prisonPause <= 0 && e.prisonTimer >= 1.7) {
             e.prisonTimer = 0;
-            const pvy = 248 * this.diffScale;
+            const pvy = 248;
             const allLanes = [0,1,2,3,4];
             allLanes.splice(~~(Math.random()*5), 1);
             allLanes.splice(~~(Math.random()*4), 1);
@@ -1029,7 +1029,30 @@ class GameScene extends Phaser.Scene {
     this.enemies.forEach(e => {
       if (!e.alive) return;
 
-      if (e.type === 'bat') {
+      if (e.type === 'bigbone') {
+        const bw = e.size * 0.95;
+        const br = e.size * 0.3;
+        const bt = e.size * 0.15;
+        this.enemyGfx.fillStyle(0xddd8b8);
+        this.enemyGfx.lineStyle(3, 0x998855, 0.9);
+        // 가운데 축
+        this.enemyGfx.fillRect(e.x - bw, e.y - bt, bw * 2, bt * 2);
+        // 왼쪽 끝 두 매듭
+        this.enemyGfx.fillCircle(e.x - bw, e.y - bt * 0.5, br);
+        this.enemyGfx.strokeCircle(e.x - bw, e.y - bt * 0.5, br);
+        this.enemyGfx.fillCircle(e.x - bw, e.y + bt * 0.5, br);
+        this.enemyGfx.strokeCircle(e.x - bw, e.y + bt * 0.5, br);
+        // 오른쪽 끝 두 매듭
+        this.enemyGfx.fillCircle(e.x + bw, e.y - bt * 0.5, br);
+        this.enemyGfx.strokeCircle(e.x + bw, e.y - bt * 0.5, br);
+        this.enemyGfx.fillCircle(e.x + bw, e.y + bt * 0.5, br);
+        this.enemyGfx.strokeCircle(e.x + bw, e.y + bt * 0.5, br);
+        // 눈
+        this.enemyGfx.fillStyle(0x221100);
+        this.enemyGfx.fillCircle(e.x - e.size * 0.18, e.y, bt * 0.9);
+        this.enemyGfx.fillCircle(e.x + e.size * 0.18, e.y, bt * 0.9);
+
+      } else if (e.type === 'bat') {
         this.enemyGfx.fillStyle(0x440066);
         this.enemyGfx.lineStyle(2, 0xaa44ff);
         this.enemyGfx.beginPath();
@@ -1255,6 +1278,7 @@ class GameOverScene extends Phaser.Scene {
 new Phaser.Game({
   type: Phaser.AUTO,
   width: W, height: H,
+  parent: 'game-container',
   resolution: window.devicePixelRatio || 1,
   render: { antialias: true, roundPixels: false },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
