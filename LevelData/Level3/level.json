@@ -84,6 +84,11 @@
       "lane": 2
     },
     {
+      "beat": 28,
+      "type": "item_fever",
+      "lane": 4
+    },
+    {
       "beat": 29,
       "type": "bat",
       "lane": 1
